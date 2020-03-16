@@ -44,6 +44,14 @@
             this.importFighter = new System.Windows.Forms.ToolStripButton();
             this.cloneButton = new System.Windows.Forms.ToolStripButton();
             this.deleteFighter = new System.Windows.Forms.ToolStripButton();
+            this.tabPageStage = new System.Windows.Forms.TabPage();
+            this.tabControl3 = new System.Windows.Forms.TabControl();
+            this.tabPage5 = new System.Windows.Forms.TabPage();
+            this.stageEditor = new HSDRawViewer.GUI.ArrayMemberEditor();
+            this.tabPage6 = new System.Windows.Forms.TabPage();
+            this.stageIDEditor = new HSDRawViewer.GUI.ArrayMemberEditor();
+            this.toolStrip7 = new System.Windows.Forms.ToolStrip();
+            this.saveStageButton = new System.Windows.Forms.ToolStripButton();
             this.tabPageItem = new System.Windows.Forms.TabPage();
             this.itemTabs = new System.Windows.Forms.TabControl();
             this.tabPageItemCommon = new System.Windows.Forms.TabPage();
@@ -66,18 +74,22 @@
             this.saveEffectButton = new System.Windows.Forms.ToolStripButton();
             this.tabPageCSS = new System.Windows.Forms.TabPage();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.mnslmapToolStrip = new System.Windows.Forms.ToolStrip();
+            this.regenerateAnimationButton = new System.Windows.Forms.ToolStripButton();
             this.mnslchrToolStrip = new System.Windows.Forms.ToolStrip();
-            this.saveMnSlChrButton = new System.Windows.Forms.ToolStripButton();
             this.importIconButton = new System.Windows.Forms.ToolStripButton();
             this.removeIconButton = new System.Windows.Forms.ToolStripButton();
-            this.buttonLoadPlSl = new System.Windows.Forms.Button();
             this.cssIconTabControl = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
             this.cssIconEditor = new HSDRawViewer.GUI.ArrayMemberEditor();
             this.tabPage2 = new System.Windows.Forms.TabPage();
             this.addedIconEditor = new HSDRawViewer.GUI.ArrayMemberEditor();
+            this.tabPage9 = new System.Windows.Forms.TabPage();
+            this.sssEditor = new HSDRawViewer.GUI.ArrayMemberEditor();
             this.toolStrip4 = new System.Windows.Forms.ToolStrip();
             this.buttonSaveCSS = new System.Windows.Forms.ToolStripButton();
+            this.buttonImportMnSlcChr = new System.Windows.Forms.ToolStripButton();
+            this.buttonImportMnSlMap = new System.Windows.Forms.ToolStripButton();
             this.tabPageMusic = new System.Windows.Forms.TabPage();
             this.tabControl2 = new System.Windows.Forms.TabControl();
             this.tabPage7 = new System.Windows.Forms.TabPage();
@@ -93,16 +105,7 @@
             this.saveAllChangesButton = new System.Windows.Forms.ToolStripButton();
             this.installFighterButton = new System.Windows.Forms.ToolStripButton();
             this.uninstallFighterButton = new System.Windows.Forms.ToolStripButton();
-            this.tabPageStage = new System.Windows.Forms.TabPage();
-            this.toolStrip7 = new System.Windows.Forms.ToolStrip();
-            this.stageEditor = new HSDRawViewer.GUI.ArrayMemberEditor();
-            this.saveStageButton = new System.Windows.Forms.ToolStripButton();
-            this.tabControl3 = new System.Windows.Forms.TabControl();
-            this.tabPage5 = new System.Windows.Forms.TabPage();
-            this.tabPage6 = new System.Windows.Forms.TabPage();
-            this.stageIDEditor = new HSDRawViewer.GUI.ArrayMemberEditor();
-            this.tabPage9 = new System.Windows.Forms.TabPage();
-            this.sssEditor = new HSDRawViewer.GUI.ArrayMemberEditor();
+            this.importStageIconButton = new System.Windows.Forms.ToolStripButton();
             this.mainTabControl.SuspendLayout();
             this.tabPageFighter.SuspendLayout();
             this.tabControl1.SuspendLayout();
@@ -110,6 +113,11 @@
             this.tabPage4.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.toolStrip1.SuspendLayout();
+            this.tabPageStage.SuspendLayout();
+            this.tabControl3.SuspendLayout();
+            this.tabPage5.SuspendLayout();
+            this.tabPage6.SuspendLayout();
+            this.toolStrip7.SuspendLayout();
             this.tabPageItem.SuspendLayout();
             this.itemTabs.SuspendLayout();
             this.tabPageItemCommon.SuspendLayout();
@@ -122,10 +130,12 @@
             this.toolStrip3.SuspendLayout();
             this.tabPageCSS.SuspendLayout();
             this.groupBox2.SuspendLayout();
+            this.mnslmapToolStrip.SuspendLayout();
             this.mnslchrToolStrip.SuspendLayout();
             this.cssIconTabControl.SuspendLayout();
             this.tabPage1.SuspendLayout();
             this.tabPage2.SuspendLayout();
+            this.tabPage9.SuspendLayout();
             this.toolStrip4.SuspendLayout();
             this.tabPageMusic.SuspendLayout();
             this.tabControl2.SuspendLayout();
@@ -133,12 +143,6 @@
             this.tabPage8.SuspendLayout();
             this.toolStrip2.SuspendLayout();
             this.toolStrip6.SuspendLayout();
-            this.tabPageStage.SuspendLayout();
-            this.toolStrip7.SuspendLayout();
-            this.tabControl3.SuspendLayout();
-            this.tabPage5.SuspendLayout();
-            this.tabPage6.SuspendLayout();
-            this.tabPage9.SuspendLayout();
             this.SuspendLayout();
             // 
             // mainTabControl
@@ -314,6 +318,91 @@
             this.deleteFighter.Size = new System.Drawing.Size(100, 22);
             this.deleteFighter.Text = "Delete Fighter";
             this.deleteFighter.Click += new System.EventHandler(this.deleteFighter_Click);
+            // 
+            // tabPageStage
+            // 
+            this.tabPageStage.Controls.Add(this.tabControl3);
+            this.tabPageStage.Controls.Add(this.toolStrip7);
+            this.tabPageStage.Location = new System.Drawing.Point(4, 22);
+            this.tabPageStage.Name = "tabPageStage";
+            this.tabPageStage.Size = new System.Drawing.Size(791, 282);
+            this.tabPageStage.TabIndex = 6;
+            this.tabPageStage.Text = "Stages";
+            this.tabPageStage.UseVisualStyleBackColor = true;
+            // 
+            // tabControl3
+            // 
+            this.tabControl3.Controls.Add(this.tabPage5);
+            this.tabControl3.Controls.Add(this.tabPage6);
+            this.tabControl3.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tabControl3.Location = new System.Drawing.Point(0, 25);
+            this.tabControl3.Name = "tabControl3";
+            this.tabControl3.SelectedIndex = 0;
+            this.tabControl3.Size = new System.Drawing.Size(791, 257);
+            this.tabControl3.TabIndex = 2;
+            // 
+            // tabPage5
+            // 
+            this.tabPage5.Controls.Add(this.stageEditor);
+            this.tabPage5.Location = new System.Drawing.Point(4, 22);
+            this.tabPage5.Name = "tabPage5";
+            this.tabPage5.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPage5.Size = new System.Drawing.Size(783, 231);
+            this.tabPage5.TabIndex = 0;
+            this.tabPage5.Text = "Stages";
+            this.tabPage5.UseVisualStyleBackColor = true;
+            // 
+            // stageEditor
+            // 
+            this.stageEditor.DisplayItemIndices = true;
+            this.stageEditor.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.stageEditor.EnablePropertyViewDescription = true;
+            this.stageEditor.ItemIndexOffset = 0;
+            this.stageEditor.Location = new System.Drawing.Point(3, 3);
+            this.stageEditor.Name = "stageEditor";
+            this.stageEditor.Size = new System.Drawing.Size(777, 225);
+            this.stageEditor.TabIndex = 1;
+            // 
+            // tabPage6
+            // 
+            this.tabPage6.Controls.Add(this.stageIDEditor);
+            this.tabPage6.Location = new System.Drawing.Point(4, 22);
+            this.tabPage6.Name = "tabPage6";
+            this.tabPage6.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPage6.Size = new System.Drawing.Size(783, 231);
+            this.tabPage6.TabIndex = 1;
+            this.tabPage6.Text = "StageIDs";
+            this.tabPage6.UseVisualStyleBackColor = true;
+            // 
+            // stageIDEditor
+            // 
+            this.stageIDEditor.DisplayItemIndices = true;
+            this.stageIDEditor.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.stageIDEditor.EnablePropertyViewDescription = true;
+            this.stageIDEditor.ItemIndexOffset = 0;
+            this.stageIDEditor.Location = new System.Drawing.Point(3, 3);
+            this.stageIDEditor.Name = "stageIDEditor";
+            this.stageIDEditor.Size = new System.Drawing.Size(777, 225);
+            this.stageIDEditor.TabIndex = 0;
+            // 
+            // toolStrip7
+            // 
+            this.toolStrip7.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.saveStageButton});
+            this.toolStrip7.Location = new System.Drawing.Point(0, 0);
+            this.toolStrip7.Name = "toolStrip7";
+            this.toolStrip7.Size = new System.Drawing.Size(791, 25);
+            this.toolStrip7.TabIndex = 0;
+            this.toolStrip7.Text = "toolStrip7";
+            // 
+            // saveStageButton
+            // 
+            this.saveStageButton.Image = global::HSDRawViewer.Properties.Resources.ico_save;
+            this.saveStageButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.saveStageButton.Name = "saveStageButton";
+            this.saveStageButton.Size = new System.Drawing.Size(132, 22);
+            this.saveStageButton.Text = "Save Stage Changes";
+            this.saveStageButton.Click += new System.EventHandler(this.saveStageButton_Click);
             // 
             // tabPageItem
             // 
@@ -567,8 +656,8 @@
             // 
             // groupBox2
             // 
+            this.groupBox2.Controls.Add(this.mnslmapToolStrip);
             this.groupBox2.Controls.Add(this.mnslchrToolStrip);
-            this.groupBox2.Controls.Add(this.buttonLoadPlSl);
             this.groupBox2.Controls.Add(this.cssIconTabControl);
             this.groupBox2.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox2.Location = new System.Drawing.Point(3, 28);
@@ -578,27 +667,38 @@
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Preview";
             // 
+            // mnslmapToolStrip
+            // 
+            this.mnslmapToolStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.regenerateAnimationButton,
+            this.importStageIconButton});
+            this.mnslmapToolStrip.Location = new System.Drawing.Point(203, 16);
+            this.mnslmapToolStrip.Name = "mnslmapToolStrip";
+            this.mnslmapToolStrip.Size = new System.Drawing.Size(579, 25);
+            this.mnslmapToolStrip.TabIndex = 3;
+            this.mnslmapToolStrip.Text = "toolStrip8";
+            this.mnslmapToolStrip.Visible = false;
+            // 
+            // regenerateAnimationButton
+            // 
+            this.regenerateAnimationButton.Image = global::HSDRawViewer.Properties.Resources.ico_replace;
+            this.regenerateAnimationButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.regenerateAnimationButton.Name = "regenerateAnimationButton";
+            this.regenerateAnimationButton.Size = new System.Drawing.Size(145, 22);
+            this.regenerateAnimationButton.Text = "Regenerate Animation";
+            this.regenerateAnimationButton.Click += new System.EventHandler(this.regenerateAnimationButton_Click);
+            // 
             // mnslchrToolStrip
             // 
             this.mnslchrToolStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.saveMnSlChrButton,
             this.importIconButton,
             this.removeIconButton});
-            this.mnslchrToolStrip.Location = new System.Drawing.Point(203, 39);
+            this.mnslchrToolStrip.Location = new System.Drawing.Point(203, 16);
             this.mnslchrToolStrip.Name = "mnslchrToolStrip";
             this.mnslchrToolStrip.Size = new System.Drawing.Size(579, 25);
             this.mnslchrToolStrip.TabIndex = 1;
             this.mnslchrToolStrip.Text = "toolStrip7";
             this.mnslchrToolStrip.Visible = false;
-            // 
-            // saveMnSlChrButton
-            // 
-            this.saveMnSlChrButton.Image = global::HSDRawViewer.Properties.Resources.ico_save;
-            this.saveMnSlChrButton.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.saveMnSlChrButton.Name = "saveMnSlChrButton";
-            this.saveMnSlChrButton.Size = new System.Drawing.Size(100, 22);
-            this.saveMnSlChrButton.Text = "Save MnSlChr";
-            this.saveMnSlChrButton.Click += new System.EventHandler(this.saveMnSlChrButton_Click);
             // 
             // importIconButton
             // 
@@ -618,17 +718,6 @@
             this.removeIconButton.Text = "Remove Icon";
             this.removeIconButton.Click += new System.EventHandler(this.removeIconButton_Click);
             // 
-            // buttonLoadPlSl
-            // 
-            this.buttonLoadPlSl.Dock = System.Windows.Forms.DockStyle.Top;
-            this.buttonLoadPlSl.Location = new System.Drawing.Point(203, 16);
-            this.buttonLoadPlSl.Name = "buttonLoadPlSl";
-            this.buttonLoadPlSl.Size = new System.Drawing.Size(579, 23);
-            this.buttonLoadPlSl.TabIndex = 0;
-            this.buttonLoadPlSl.Text = "Load MnSlChr";
-            this.buttonLoadPlSl.UseVisualStyleBackColor = true;
-            this.buttonLoadPlSl.Click += new System.EventHandler(this.buttonLoadPlSl_Click);
-            // 
             // cssIconTabControl
             // 
             this.cssIconTabControl.Controls.Add(this.tabPage1);
@@ -640,6 +729,7 @@
             this.cssIconTabControl.SelectedIndex = 0;
             this.cssIconTabControl.Size = new System.Drawing.Size(200, 232);
             this.cssIconTabControl.TabIndex = 2;
+            this.cssIconTabControl.SelectedIndexChanged += new System.EventHandler(this.cssIconTabControl_SelectedIndexChanged);
             // 
             // tabPage1
             // 
@@ -691,10 +781,34 @@
             this.addedIconEditor.TabIndex = 0;
             this.addedIconEditor.Visible = false;
             // 
+            // tabPage9
+            // 
+            this.tabPage9.Controls.Add(this.sssEditor);
+            this.tabPage9.Location = new System.Drawing.Point(4, 22);
+            this.tabPage9.Name = "tabPage9";
+            this.tabPage9.Size = new System.Drawing.Size(192, 206);
+            this.tabPage9.TabIndex = 2;
+            this.tabPage9.Text = "SSS";
+            this.tabPage9.UseVisualStyleBackColor = true;
+            // 
+            // sssEditor
+            // 
+            this.sssEditor.DisplayItemIndices = true;
+            this.sssEditor.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.sssEditor.EnablePropertyViewDescription = true;
+            this.sssEditor.ItemIndexOffset = 0;
+            this.sssEditor.Location = new System.Drawing.Point(0, 0);
+            this.sssEditor.Name = "sssEditor";
+            this.sssEditor.Size = new System.Drawing.Size(192, 206);
+            this.sssEditor.TabIndex = 0;
+            this.sssEditor.Visible = false;
+            // 
             // toolStrip4
             // 
             this.toolStrip4.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.buttonSaveCSS});
+            this.buttonSaveCSS,
+            this.buttonImportMnSlcChr,
+            this.buttonImportMnSlMap});
             this.toolStrip4.Location = new System.Drawing.Point(3, 3);
             this.toolStrip4.Name = "toolStrip4";
             this.toolStrip4.Size = new System.Drawing.Size(785, 25);
@@ -709,6 +823,24 @@
             this.buttonSaveCSS.Size = new System.Drawing.Size(123, 22);
             this.buttonSaveCSS.Text = "Save CSS Changes";
             this.buttonSaveCSS.Click += new System.EventHandler(this.buttonSaveCSS_Click);
+            // 
+            // buttonImportMnSlcChr
+            // 
+            this.buttonImportMnSlcChr.Image = global::HSDRawViewer.Properties.Resources.ts_importfile;
+            this.buttonImportMnSlcChr.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.buttonImportMnSlcChr.Name = "buttonImportMnSlcChr";
+            this.buttonImportMnSlcChr.Size = new System.Drawing.Size(112, 22);
+            this.buttonImportMnSlcChr.Text = "Import MnSlChr";
+            this.buttonImportMnSlcChr.Click += new System.EventHandler(this.buttonLoadPlSl_Click);
+            // 
+            // buttonImportMnSlMap
+            // 
+            this.buttonImportMnSlMap.Image = global::HSDRawViewer.Properties.Resources.ts_importfile;
+            this.buttonImportMnSlMap.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.buttonImportMnSlMap.Name = "buttonImportMnSlMap";
+            this.buttonImportMnSlMap.Size = new System.Drawing.Size(117, 22);
+            this.buttonImportMnSlMap.Text = "Import MnSlMap";
+            this.buttonImportMnSlMap.Click += new System.EventHandler(this.buttonImportMnSlMap_Click);
             // 
             // tabPageMusic
             // 
@@ -866,111 +998,14 @@
             this.uninstallFighterButton.Text = "Uninstall Fighter";
             this.uninstallFighterButton.Click += new System.EventHandler(this.uninstallFighterButton_Click);
             // 
-            // tabPageStage
+            // importStageIconButton
             // 
-            this.tabPageStage.Controls.Add(this.tabControl3);
-            this.tabPageStage.Controls.Add(this.toolStrip7);
-            this.tabPageStage.Location = new System.Drawing.Point(4, 22);
-            this.tabPageStage.Name = "tabPageStage";
-            this.tabPageStage.Size = new System.Drawing.Size(791, 282);
-            this.tabPageStage.TabIndex = 6;
-            this.tabPageStage.Text = "Stages";
-            this.tabPageStage.UseVisualStyleBackColor = true;
-            // 
-            // toolStrip7
-            // 
-            this.toolStrip7.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.saveStageButton});
-            this.toolStrip7.Location = new System.Drawing.Point(0, 0);
-            this.toolStrip7.Name = "toolStrip7";
-            this.toolStrip7.Size = new System.Drawing.Size(791, 25);
-            this.toolStrip7.TabIndex = 0;
-            this.toolStrip7.Text = "toolStrip7";
-            // 
-            // stageEditor
-            // 
-            this.stageEditor.DisplayItemIndices = true;
-            this.stageEditor.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.stageEditor.EnablePropertyViewDescription = true;
-            this.stageEditor.ItemIndexOffset = 0;
-            this.stageEditor.Location = new System.Drawing.Point(3, 3);
-            this.stageEditor.Name = "stageEditor";
-            this.stageEditor.Size = new System.Drawing.Size(777, 225);
-            this.stageEditor.TabIndex = 1;
-            // 
-            // saveStageButton
-            // 
-            this.saveStageButton.Image = global::HSDRawViewer.Properties.Resources.ico_save;
-            this.saveStageButton.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.saveStageButton.Name = "saveStageButton";
-            this.saveStageButton.Size = new System.Drawing.Size(132, 22);
-            this.saveStageButton.Text = "Save Stage Changes";
-            this.saveStageButton.Click += new System.EventHandler(this.saveStageButton_Click);
-            // 
-            // tabControl3
-            // 
-            this.tabControl3.Controls.Add(this.tabPage5);
-            this.tabControl3.Controls.Add(this.tabPage6);
-            this.tabControl3.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tabControl3.Location = new System.Drawing.Point(0, 25);
-            this.tabControl3.Name = "tabControl3";
-            this.tabControl3.SelectedIndex = 0;
-            this.tabControl3.Size = new System.Drawing.Size(791, 257);
-            this.tabControl3.TabIndex = 2;
-            // 
-            // tabPage5
-            // 
-            this.tabPage5.Controls.Add(this.stageEditor);
-            this.tabPage5.Location = new System.Drawing.Point(4, 22);
-            this.tabPage5.Name = "tabPage5";
-            this.tabPage5.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage5.Size = new System.Drawing.Size(783, 231);
-            this.tabPage5.TabIndex = 0;
-            this.tabPage5.Text = "Stages";
-            this.tabPage5.UseVisualStyleBackColor = true;
-            // 
-            // tabPage6
-            // 
-            this.tabPage6.Controls.Add(this.stageIDEditor);
-            this.tabPage6.Location = new System.Drawing.Point(4, 22);
-            this.tabPage6.Name = "tabPage6";
-            this.tabPage6.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage6.Size = new System.Drawing.Size(783, 231);
-            this.tabPage6.TabIndex = 1;
-            this.tabPage6.Text = "StageIDs";
-            this.tabPage6.UseVisualStyleBackColor = true;
-            // 
-            // stageIDEditor
-            // 
-            this.stageIDEditor.DisplayItemIndices = true;
-            this.stageIDEditor.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.stageIDEditor.EnablePropertyViewDescription = true;
-            this.stageIDEditor.ItemIndexOffset = 0;
-            this.stageIDEditor.Location = new System.Drawing.Point(3, 3);
-            this.stageIDEditor.Name = "stageIDEditor";
-            this.stageIDEditor.Size = new System.Drawing.Size(777, 225);
-            this.stageIDEditor.TabIndex = 0;
-            // 
-            // tabPage9
-            // 
-            this.tabPage9.Controls.Add(this.sssEditor);
-            this.tabPage9.Location = new System.Drawing.Point(4, 22);
-            this.tabPage9.Name = "tabPage9";
-            this.tabPage9.Size = new System.Drawing.Size(192, 206);
-            this.tabPage9.TabIndex = 2;
-            this.tabPage9.Text = "SSS";
-            this.tabPage9.UseVisualStyleBackColor = true;
-            // 
-            // sssEditor
-            // 
-            this.sssEditor.DisplayItemIndices = false;
-            this.sssEditor.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.sssEditor.EnablePropertyViewDescription = true;
-            this.sssEditor.ItemIndexOffset = 0;
-            this.sssEditor.Location = new System.Drawing.Point(0, 0);
-            this.sssEditor.Name = "sssEditor";
-            this.sssEditor.Size = new System.Drawing.Size(192, 206);
-            this.sssEditor.TabIndex = 0;
+            this.importStageIconButton.Image = global::HSDRawViewer.Properties.Resources.ts_importfile;
+            this.importStageIconButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.importStageIconButton.Name = "importStageIconButton";
+            this.importStageIconButton.Size = new System.Drawing.Size(125, 22);
+            this.importStageIconButton.Text = "Import Icon Image";
+            this.importStageIconButton.Click += new System.EventHandler(this.importStageIconButton_Click);
             // 
             // MexDataEditor
             // 
@@ -991,6 +1026,13 @@
             this.groupBox1.ResumeLayout(false);
             this.toolStrip1.ResumeLayout(false);
             this.toolStrip1.PerformLayout();
+            this.tabPageStage.ResumeLayout(false);
+            this.tabPageStage.PerformLayout();
+            this.tabControl3.ResumeLayout(false);
+            this.tabPage5.ResumeLayout(false);
+            this.tabPage6.ResumeLayout(false);
+            this.toolStrip7.ResumeLayout(false);
+            this.toolStrip7.PerformLayout();
             this.tabPageItem.ResumeLayout(false);
             this.tabPageItem.PerformLayout();
             this.itemTabs.ResumeLayout(false);
@@ -1009,11 +1051,14 @@
             this.tabPageCSS.PerformLayout();
             this.groupBox2.ResumeLayout(false);
             this.groupBox2.PerformLayout();
+            this.mnslmapToolStrip.ResumeLayout(false);
+            this.mnslmapToolStrip.PerformLayout();
             this.mnslchrToolStrip.ResumeLayout(false);
             this.mnslchrToolStrip.PerformLayout();
             this.cssIconTabControl.ResumeLayout(false);
             this.tabPage1.ResumeLayout(false);
             this.tabPage2.ResumeLayout(false);
+            this.tabPage9.ResumeLayout(false);
             this.toolStrip4.ResumeLayout(false);
             this.toolStrip4.PerformLayout();
             this.tabPageMusic.ResumeLayout(false);
@@ -1025,14 +1070,6 @@
             this.toolStrip2.PerformLayout();
             this.toolStrip6.ResumeLayout(false);
             this.toolStrip6.PerformLayout();
-            this.tabPageStage.ResumeLayout(false);
-            this.tabPageStage.PerformLayout();
-            this.toolStrip7.ResumeLayout(false);
-            this.toolStrip7.PerformLayout();
-            this.tabControl3.ResumeLayout(false);
-            this.tabPage5.ResumeLayout(false);
-            this.tabPage6.ResumeLayout(false);
-            this.tabPage9.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -1059,7 +1096,6 @@
         private System.Windows.Forms.GroupBox groupBox2;
         private ArrayMemberEditor cssIconEditor;
         private System.Windows.Forms.ToolStrip toolStrip4;
-        private System.Windows.Forms.Button buttonLoadPlSl;
         private System.Windows.Forms.ToolStripButton buttonSaveCSS;
         private System.Windows.Forms.ToolStripButton cloneButton;
         private System.Windows.Forms.ToolStripButton exportFighter;
@@ -1103,7 +1139,6 @@
         private System.Windows.Forms.TabPage tabPage2;
         private ArrayMemberEditor addedIconEditor;
         private System.Windows.Forms.ToolStripButton removeIconButton;
-        private System.Windows.Forms.ToolStripButton saveMnSlChrButton;
         private System.Windows.Forms.Button buttonCopyMoveLogic;
         private System.Windows.Forms.TabPage tabPageStage;
         private ArrayMemberEditor stageEditor;
@@ -1115,5 +1150,10 @@
         private ArrayMemberEditor stageIDEditor;
         private System.Windows.Forms.TabPage tabPage9;
         private ArrayMemberEditor sssEditor;
+        private System.Windows.Forms.ToolStripButton buttonImportMnSlcChr;
+        private System.Windows.Forms.ToolStripButton buttonImportMnSlMap;
+        private System.Windows.Forms.ToolStrip mnslmapToolStrip;
+        private System.Windows.Forms.ToolStripButton regenerateAnimationButton;
+        private System.Windows.Forms.ToolStripButton importStageIconButton;
     }
 }
