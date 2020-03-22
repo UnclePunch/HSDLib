@@ -39,6 +39,9 @@ namespace HSDRawViewer.GUI.Plugins
 
             JOBJManager = new JOBJManager();
 
+            renderModeBox.ComboBox.DataSource = Enum.GetValues(typeof(RenderMode));
+            renderModeBox.SelectedIndex = 0;
+
             listDOBJ.DataSource = dobjList;
 
             toolStripComboBox1.SelectedIndex = 0;
@@ -284,7 +287,7 @@ namespace HSDRawViewer.GUI.Plugins
         /// <param name="e"></param>
         private void vertexColorsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            JOBJManager.DOBJManager.RenderVertexColor = renderVertexColorsToolStripMenuItem.Checked;
+            //JOBJManager.DOBJManager.RenderVertexColor = renderVertexColorsToolStripMenuItem.Checked;
         }
 
         /// <summary>
@@ -377,6 +380,13 @@ namespace HSDRawViewer.GUI.Plugins
             }
         }
 
+
+        public class DummyDOBJSetting
+        {
+            [DisplayName("Number to Generate"), Description("")]
+            public int NumberToGenerate { get; set; } = 1;
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -384,20 +394,28 @@ namespace HSDRawViewer.GUI.Plugins
         /// <param name="e"></param>
         private void addDummyDOBJToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            root.Dobj.Add(new HSD_DOBJ()
+            var setting = new DummyDOBJSetting();
+            using (PropertyDialog d = new PropertyDialog("Add Dummy DOBJs", setting))
             {
-                Mobj = new HSD_MOBJ()
+                if (d.ShowDialog() == DialogResult.OK)
                 {
-                    RenderFlags = RENDER_MODE.ALPHA_COMPAT | RENDER_MODE.DIFFUSE_MAT,
-                    Material = new HSD_Material()
-                    {
-                        DiffuseColor = Color.White,
-                        SpecularColor = Color.White,
-                        AmbientColor = Color.White,
-                        Shininess = 50
-                    }
+                    for (int i = 0; i < setting.NumberToGenerate; i++)
+                        root.Dobj.Add(new HSD_DOBJ()
+                        {
+                            Mobj = new HSD_MOBJ()
+                            {
+                                RenderFlags = RENDER_MODE.ALPHA_COMPAT | RENDER_MODE.DIFFUSE_MAT,
+                                Material = new HSD_Material()
+                                {
+                                    DiffuseColor = Color.White,
+                                    SpecularColor = Color.White,
+                                    AmbientColor = Color.White,
+                                    Shininess = 50
+                                }
+                            }
+                        });
                 }
-            });
+            }
 
             RefreshGUI();
         }
@@ -821,6 +839,21 @@ namespace HSDRawViewer.GUI.Plugins
                     });
                     animFile.Save(f);
                 }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void renderModeBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if(JOBJManager != null)
+            {
+                RenderMode mode = JOBJManager.RenderMode;
+                Enum.TryParse<RenderMode>(renderModeBox.Text, out mode);
+                JOBJManager.RenderMode = mode;
+            }
         }
     }
 }
