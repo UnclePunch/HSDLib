@@ -44,7 +44,7 @@ uniform float alpha;
 
 // flags
 uniform int dfNone;
-//uniform int useMaterialLighting;
+uniform int useConstant;
 uniform int useVertexColor;
 uniform int enableDiffuse;
 uniform int enableSpecular;
@@ -85,8 +85,6 @@ vec2 GetCoordType(int coordType, vec2 tex0)
 ///
 vec4 MixTextureColor(sampler2D tex, vec2 texCoord, mat4 uvTransform, vec2 uvscale, int coordType, int mirrorFix)
 {
-    vec4 clr = vec4(1);
-
     vec2 coords = GetCoordType(coordType, texCoord);
 
 	coords = (uvTransform * vec4(coords.x, coords.y, 0, 1)).xy;
@@ -96,9 +94,7 @@ vec4 MixTextureColor(sampler2D tex, vec2 texCoord, mat4 uvTransform, vec2 uvscal
 	if(mirrorFix == 1) // GX OPENGL difference
 		coords.y += 1;
 
-    clr = texture(tex, coords);
-
-    return clr;
+    return texture(tex, coords);
 }
 
 ///
@@ -106,15 +102,12 @@ vec4 MixTextureColor(sampler2D tex, vec2 texCoord, mat4 uvTransform, vec2 uvscal
 ///
 vec4 GetDiffuseMaterial(vec3 V, vec3 N)
 {
-	if(useVertexColor == 1)
-		return vertexColor;
-		
 	if(enableDiffuse == 0)
 		return vec4(1, 1, 1, 1);
 
     float lambert = clamp(dot(N, V), 0, 1);
-	vec3 clr = vec3(lambert);
-	return vec4(clr, 1);
+
+	return vec4(vec3(lambert), 1);
 }
 
 ///
@@ -122,17 +115,12 @@ vec4 GetDiffuseMaterial(vec3 V, vec3 N)
 ///
 vec4 GetSpecularMaterial(vec3 V, vec3 N)
 {
-	if(useVertexColor == 1)
-		return vec4(0, 0, 0, 1);
-
 	if(enableSpecular == 0)
 		return vec4(0, 0, 0, 1);
 	
     float phong = pow(spec, shinniness);
 
-    vec3 specularTerm = vec3(phong);
-
-	return vec4(specularTerm, 1);
+	return vec4(vec3(phong), 1);
 }
 
 ///
@@ -142,45 +130,47 @@ vec4 ColorMap_Pass(vec4 passColor, int operation, int alphaOperation, sampler2D 
 {
 	vec4 pass = MixTextureColor(tex, texCoord, uvTransform, uvscale, coordType, mirrorFix);
 
-	if(operation == 0) // Modulate
+	if(operation == 1) // Modulate
 		passColor.rgb *= pass.rgb;
 
-	if(operation == 1) // Replace
+	if(operation == 2) // Replace
 		passColor.rgb = pass.rgb;
 
-	if(operation == 2) // Blend
+	if(operation == 3) // Blend
 		passColor.rgb = mix(passColor, pass, blend).rgb;
 
-	if(operation == 3) // Add
+	if(operation == 4) // Add
 		passColor.rgb += pass.rgb;
 
-	if(operation == 4) // Subtract
+	if(operation == 5) // Subtract
 		passColor.rgb -= pass.rgb;
 
-	//if(operation == 5) // Pass
+	//if(operation == 6) // Pass
 			
-	// 6 Alpha Mask
+	if(operation == 7 && pass.a != 0) // Alpha Mask
+		passColor.rgb = pass.rgb;
 
-	// 7 RGB Mask
+	// 8 RGB Mask
 
 	
-	if(alphaOperation == 0) // Modulate
+	if(alphaOperation == 1) // Modulate
 		passColor.a *= pass.a;
 		
-	if(alphaOperation == 1) // Replace
+	if(alphaOperation == 2) // Replace
 		passColor.a = pass.a;
+		
+	if(alphaOperation == 3) // Blend
+		passColor.a = mix(passColor.a, pass.a, blend);
 
-	if(alphaOperation == 2) //Add
+	if(alphaOperation == 4) //Add
 		passColor.a += pass.a;
 
-	if(alphaOperation == 3) //Subtract
+	if(alphaOperation == 5) //Subtract
 		passColor.a -= pass.a;
 
-	//if(alphaOperation == 4) //Pass
+	//if(alphaOperation == 6) //Pass
 	
-	// 5 Alpha Mask
-
-	// 6 RGB Mask
+	// 7 Alpha Mask
 
 	return passColor;
 }
@@ -202,7 +192,6 @@ void main()
 	vec4 ambientPass = ambientColor;
 	vec4 diffusePass = diffuseColor;
 	vec4 specularPass = specularColor;
-	vec4 extPass = vec4(1, 1, 1, 1);
 
 	if(hasTEX0 == 1)
 	{
@@ -210,7 +199,6 @@ void main()
 		if(TEX0LightType == 0) col = ambientPass;
 		if(TEX0LightType == 1) col = diffusePass;
 		if(TEX0LightType == 2) col = specularPass;
-		if(TEX0LightType == 3) col = extPass;
 
 		col = ColorMap_Pass(
 		col, 
@@ -227,7 +215,6 @@ void main()
 		if(TEX0LightType == 0) ambientPass = col;
 		if(TEX0LightType == 1) diffusePass = col;
 		if(TEX0LightType == 2) specularPass = col;
-		if(TEX0LightType == 3) extPass = col;
 	}
 	if(hasTEX1 == 1)
 	{
@@ -235,7 +222,6 @@ void main()
 		if(TEX1LightType == 0) col = ambientPass;
 		if(TEX1LightType == 1) col = diffusePass;
 		if(TEX1LightType == 2) col = specularPass;
-		if(TEX1LightType == 3) col =  extPass;
 
 		col = ColorMap_Pass(
 		col, 
@@ -252,20 +238,73 @@ void main()
 		if(TEX1LightType == 0) ambientPass = col;
 		if(TEX1LightType == 1) diffusePass = col;
 		if(TEX1LightType == 2) specularPass = col;
-		if(TEX1LightType == 3) extPass = col;
 	}
 
 	fragColor.rgb = diffusePass.rgb * GetDiffuseMaterial(normalize(normal), V).rgb
 					+ specularPass.rgb * GetSpecularMaterial(normalize(normal), V).rgb;
 
-	fragColor.rgb *= extPass.rgb;
-
 	fragColor.rgb = clamp(fragColor.rgb, ambientPass.rgb * fragColor.rgb, vec3(1));
+
+	vec4 extColor = vec4(1, 1, 1, 1);
+	if(hasTEX0 == 1 && TEX0LightType == 3)
+	{
+		extColor = ColorMap_Pass(
+		extColor, 
+		TEX0ColorOperation, 
+		TEX0AlphaOperation, 
+		TEX0,
+		texcoord0, 
+		TEX0Transform, 
+		TEX0UVScale, 
+		TEX0CoordType, 
+		TEX0MirrorFix,
+		TEX0Blend);
+
+		fragColor = ColorMap_Pass(
+		fragColor, 
+		TEX0ColorOperation, 
+		TEX0AlphaOperation, 
+		TEX0,
+		texcoord0, 
+		TEX0Transform, 
+		TEX0UVScale, 
+		TEX0CoordType, 
+		TEX0MirrorFix,
+		TEX0Blend);
+	}
+	if(hasTEX1 == 1 && TEX1LightType == 3)
+	{
+		extColor = ColorMap_Pass(
+		extColor, 
+		TEX1ColorOperation, 
+		TEX1AlphaOperation, 
+		TEX1,
+		texcoord1, 
+		TEX1Transform, 
+		TEX1UVScale, 
+		TEX1CoordType, 
+		TEX1MirrorFix,
+		TEX1Blend);
+
+		fragColor = ColorMap_Pass(
+		fragColor, 
+		TEX1ColorOperation, 
+		TEX1AlphaOperation, 
+		TEX1,
+		texcoord1, 
+		TEX1Transform, 
+		TEX1UVScale, 
+		TEX1CoordType, 
+		TEX1MirrorFix,
+		TEX1Blend);
+	}
 
 	fragColor.a = diffusePass.a;
 
-	if(dfNone == 0)
-		fragColor.a *= alpha;
+	if(useVertexColor == 1)
+		fragColor *= vertexColor;
+
+	fragColor.a *= alpha;
 		
 	fragColor.xyz *= overlayColor;
 
@@ -273,12 +312,13 @@ void main()
 	{
 	case 1: fragColor = vec4(vec3(0.5) + normal / 2, 1); break;
 	case 2: fragColor = vertexColor; break;
-	case 3: fragColor = vec4(texcoord0, 0, 1); break;
-	case 4: fragColor = vec4(texcoord1, 0, 1); break;
+	case 3: fragColor = vec4(texcoord0.x, 0, texcoord0.y, 1); break;
+	case 4: fragColor = vec4(texcoord1.x, 0, texcoord1.y, 1); break;
 	case 5: fragColor = ambientPass; break;
 	case 6: fragColor = diffusePass; break;
 	case 7: fragColor = specularPass; break;
-	case 8: fragColor = extPass; break;
+	case 8: fragColor = extColor; break;
+	case 9: fragColor = diffusePass * GetDiffuseMaterial(normalize(normal), V); break;
+	case 10: fragColor = specularPass * GetSpecularMaterial(normalize(normal), V); break;
 	}
-
 }

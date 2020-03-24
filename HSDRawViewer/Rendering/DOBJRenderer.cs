@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using OpenTK;
 using OpenTK.Graphics.OpenGL;
-using System.Runtime.InteropServices;
 
 namespace HSDRawViewer.Rendering
 {
@@ -125,18 +124,17 @@ namespace HSDRawViewer.Rendering
 
             var mvp = camera.MvpMatrix;
             GL.UniformMatrix4(GXShader.GetVertexAttributeUniformLocation("mvp"), false, ref mvp);
+            
+            var campos = (camera.RotationMatrix * new Vector4(camera.Translation, 1)).Xyz;
+            GXShader.SetVector3("cameraPos", campos);
 
-            Vector3 camPos = (camera.RotationMatrix * new Vector4(camera.Translation, 1)).Xyz;
-            GXShader.SetVector3("cameraPos", camPos);
+            //GXShader.SetBoolToInt("envelopeModel", parentJOBJ.Flags.HasFlag(JOBJ_FLAG.ENVELOPE_MODEL));
 
             Matrix4 single = Matrix4.Identity;
             if (parentJOBJ != null && jobjManager != null)
                 single = jobjManager.GetWorldTransform(parentJOBJ);
             GL.UniformMatrix4(GXShader.GetVertexAttributeUniformLocation("singleBind"), false, ref single);
-
-            var rootJOBJ = jobjManager.GetJOBJ(0);
-            GXShader.SetBoolToInt("isRootBound", parentJOBJ?._s == rootJOBJ?._s);
-
+            
             GXShader.SetWorldTransformBones(jobjManager.GetWorldTransforms());
             //GXShader.SetBindTransformBones(jobjManager.GetBindTransforms());
 
@@ -153,7 +151,7 @@ namespace HSDRawViewer.Rendering
             GXShader.SetMatrix4x4("sphereMatrix", ref sphereMatrix);
 
             if (mobj != null)
-                BindMOBJ(GXShader, mobj);
+                BindMOBJ(GXShader, mobj, parentJOBJ);
 
             GL.BindBuffer(BufferTarget.ArrayBuffer, DOBJtoBuffer[dobj]);
 
@@ -174,15 +172,8 @@ namespace HSDRawViewer.Rendering
 
             GL.EnableVertexAttribArray(GXShader.GetVertexAttributeUniformLocation("GX_VA_TEX1"));
             GL.VertexAttribPointer(GXShader.GetVertexAttributeUniformLocation("GX_VA_TEX1"), 2, VertexAttribPointerType.Float, false, GX_Vertex.Stride, 96);
-
-            if (selected)
-            {
-                GL.Uniform1(GXShader.GetVertexAttributeUniformLocation("colorOverride"), 1);
-            }
-            else
-            {
-                GL.Uniform1(GXShader.GetVertexAttributeUniformLocation("colorOverride"), 0);
-            }
+            
+            GXShader.SetBoolToInt("colorOverride", selected);
 
             foreach (var p in DOBJtoPOBJCache[dobj])
             {
@@ -191,10 +182,9 @@ namespace HSDRawViewer.Rendering
 
                 var we = p.Weights;
                 GL.Uniform4(GXShader.GetVertexAttributeUniformLocation("weights"), p.Weights.Length, ref p.Weights[0].X);
-
-                GL.Uniform1(GXShader.GetVertexAttributeUniformLocation("hasEnvelopes"), p.HasWeighting ? 1 : 0);
-
-                GL.Uniform1(GXShader.GetVertexAttributeUniformLocation("notInverted"), p.Flag.HasFlag(POBJ_FLAG.NOTINVERTED) ? 1 : 0);
+                
+                GXShader.SetBoolToInt("hasEnvelopes", p.HasWeighting);
+                GXShader.SetBoolToInt("enableParentTransform", !p.Flag.HasFlag(POBJ_FLAG.PARENTTRANSFORM));
 
                 GL.Enable(EnableCap.CullFace);
                 if (selected)
@@ -304,7 +294,7 @@ namespace HSDRawViewer.Rendering
         /// 
         /// </summary>
         /// <param name="mobj"></param>
-        private void BindMOBJ(Shader shader, HSD_MOBJ mobj)
+        private void BindMOBJ(Shader shader, HSD_MOBJ mobj, HSD_JOBJ parentJOBJ)
         {
             GL.Enable(EnableCap.Texture2D);
 
@@ -337,15 +327,16 @@ namespace HSDRawViewer.Rendering
                 shader.SetFloat("alpha", color.Alpha);
             }
 
-            
-            shader.SetBoolToInt("dfNone", mobj.RenderFlags.HasFlag(RENDER_MODE.DF_NONE));
-            shader.SetBoolToInt("enableSpecular", mobj.RenderFlags.HasFlag(RENDER_MODE.SPECULAR));
-            shader.SetBoolToInt("enableDiffuse", mobj.RenderFlags.HasFlag(RENDER_MODE.DIFFUSE));
-            shader.SetBoolToInt("useVertexColor", mobj.RenderFlags.HasFlag(RENDER_MODE.DIFFUSE_VTX));
-            //shader.SetBoolToInt("useMaterialLighting", mobj.RenderFlags.HasFlag(RENDER_MODE.DIFFUSE_MAT));
+            var enableAll = mobj.RenderFlags.HasFlag(RENDER_MODE.DF_ALL);
 
-            shader.SetBoolToInt("hasTEX0", mobj.RenderFlags.HasFlag(RENDER_MODE.TEX0));
-            shader.SetBoolToInt("hasTEX1", mobj.RenderFlags.HasFlag(RENDER_MODE.TEX1));
+            shader.SetBoolToInt("dfNone", mobj.RenderFlags.HasFlag(RENDER_MODE.DF_NONE));
+            shader.SetBoolToInt("enableSpecular", parentJOBJ.Flags.HasFlag(JOBJ_FLAG.SPECULAR) && mobj.RenderFlags.HasFlag(RENDER_MODE.SPECULAR));
+            shader.SetBoolToInt("enableDiffuse", parentJOBJ.Flags.HasFlag(JOBJ_FLAG.LIGHTING) && mobj.RenderFlags.HasFlag(RENDER_MODE.DIFFUSE));
+            shader.SetBoolToInt("useConstant", mobj.RenderFlags.HasFlag(RENDER_MODE.CONSTANT));
+            shader.SetBoolToInt("useVertexColor", mobj.RenderFlags.HasFlag(RENDER_MODE.VERTEX));
+
+            shader.SetBoolToInt("hasTEX0", mobj.RenderFlags.HasFlag(RENDER_MODE.TEX0) || enableAll);
+            shader.SetBoolToInt("hasTEX1", mobj.RenderFlags.HasFlag(RENDER_MODE.TEX1) || enableAll);
 
             var id = Matrix4.Identity;
 
@@ -410,31 +401,39 @@ namespace HSDRawViewer.Rendering
                     if (flags.HasFlag(TOBJ_FLAGS.LIGHTMAP_SHADOW))
                         lightType = 4;
 
-                    int colorOP = 0; // MODULATE
-                    if (flags.HasFlag(TOBJ_FLAGS.COLORMAP_REPLACE))
+                    int colorOP = 0; // NONE
+                    if (flags.HasFlag(TOBJ_FLAGS.COLORMAP_MODULATE))
                         colorOP = 1;
-                    if (flags.HasFlag(TOBJ_FLAGS.COLORMAP_BLEND))
+                    if (flags.HasFlag(TOBJ_FLAGS.COLORMAP_REPLACE))
                         colorOP = 2;
-                    if (flags.HasFlag(TOBJ_FLAGS.COLORMAP_ADD))
+                    if (flags.HasFlag(TOBJ_FLAGS.COLORMAP_BLEND))
                         colorOP = 3;
-                    if (flags.HasFlag(TOBJ_FLAGS.COLORMAP_SUB))
+                    if (flags.HasFlag(TOBJ_FLAGS.COLORMAP_ADD))
                         colorOP = 4;
-                    if (flags.HasFlag(TOBJ_FLAGS.COLORMAP_PASS))
+                    if (flags.HasFlag(TOBJ_FLAGS.COLORMAP_SUB))
                         colorOP = 5;
-                    //TOBJ_FLAGS.COLORMAP_ALPHA_MASK
-                    //TOBJ_FLAGS.COLORMAP_RGB_MASK
+                    if (flags.HasFlag(TOBJ_FLAGS.COLORMAP_PASS))
+                        colorOP = 6;
+                    if (flags.HasFlag(TOBJ_FLAGS.COLORMAP_ALPHA_MASK))
+                        colorOP = 7;
+                    /*if (flags.HasFlag(TOBJ_FLAGS.COLORMAP_RGB_MASK))
+                        colorOP = 8;*/
 
-                    int alphaOP = 0; // MODULATE
-                    if (flags.HasFlag(TOBJ_FLAGS.ALPHAMAP_REPLACE))
+                    int alphaOP = 0; // NONE
+                    if (flags.HasFlag(TOBJ_FLAGS.ALPHAMAP_MODULATE))
                         alphaOP = 1;
-                    if (flags.HasFlag(TOBJ_FLAGS.ALPHAMAP_ADD))
+                    if (flags.HasFlag(TOBJ_FLAGS.ALPHAMAP_REPLACE))
                         alphaOP = 2;
-                    if (flags.HasFlag(TOBJ_FLAGS.ALPHAMAP_SUB))
+                    if (flags.HasFlag(TOBJ_FLAGS.ALPHAMAP_BLEND))
                         alphaOP = 3;
-                    if (flags.HasFlag(TOBJ_FLAGS.ALPHAMAP_PASS))
+                    if (flags.HasFlag(TOBJ_FLAGS.ALPHAMAP_ADD))
                         alphaOP = 4;
-                    //if (tex.Flags.HasFlag(TOBJ_FLAGS.ALPHAMAP_ALPHA_MASK))
-                    //    aoperation = 5;
+                    if (flags.HasFlag(TOBJ_FLAGS.ALPHAMAP_SUB))
+                        alphaOP = 5;
+                    if (flags.HasFlag(TOBJ_FLAGS.ALPHAMAP_PASS))
+                        alphaOP = 6;
+                    //if (flags.HasFlag(TOBJ_FLAGS.ALPHAMAP_ALPHA_MASK))
+                    //    alphaOP = 7;
 
                     var transform = Matrix4.CreateScale(tex.SX, tex.SY, tex.SZ) *
                         Matrix4.CreateFromQuaternion(Math3D.FromEulerAngles(tex.RZ, tex.RY, tex.RX)) *
