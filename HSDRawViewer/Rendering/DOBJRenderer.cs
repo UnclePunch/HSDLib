@@ -47,6 +47,7 @@ namespace HSDRawViewer.Rendering
         {
             public POBJ_FLAG Flag;
 
+            public int EnvelopeCount = 0;
             public Vector4[] Envelopes = new Vector4[10];
             public Vector4[] Weights = new Vector4[10];
 
@@ -134,6 +135,8 @@ namespace HSDRawViewer.Rendering
             if (parentJOBJ != null && jobjManager != null)
                 single = jobjManager.GetWorldTransform(parentJOBJ);
             GL.UniformMatrix4(GXShader.GetVertexAttributeUniformLocation("singleBind"), false, ref single);
+
+            GXShader.SetBoolToInt("isSkeleton", parentJOBJ.Flags.HasFlag(JOBJ_FLAG.SKELETON_ROOT) || parentJOBJ.Flags.HasFlag(JOBJ_FLAG.SKELETON));
             
             GXShader.SetWorldTransformBones(jobjManager.GetWorldTransforms());
             //GXShader.SetBindTransformBones(jobjManager.GetBindTransforms());
@@ -185,6 +188,7 @@ namespace HSDRawViewer.Rendering
                 
                 GXShader.SetBoolToInt("hasEnvelopes", p.HasWeighting);
                 GXShader.SetBoolToInt("enableParentTransform", !p.Flag.HasFlag(POBJ_FLAG.PARENTTRANSFORM));
+                //GXShader.SetInt("envelopeCount", p.EnvelopeCount);
 
                 GL.Enable(EnableCap.CullFace);
                 if (selected)
@@ -256,6 +260,7 @@ namespace HSDRawViewer.Rendering
                     pobjCache.Weights[eni] = w;
                     pobjCache.Envelopes[eni] = b;
                     eni++;
+                    pobjCache.EnvelopeCount = v.EnvelopeCount;
                     pobjCache.HasWeighting = v.EnvelopeCount > 0;
                 }
 
@@ -329,7 +334,7 @@ namespace HSDRawViewer.Rendering
 
             var enableAll = mobj.RenderFlags.HasFlag(RENDER_MODE.DF_ALL);
 
-            shader.SetBoolToInt("dfNone", mobj.RenderFlags.HasFlag(RENDER_MODE.DF_NONE));
+            shader.SetBoolToInt("no_zupdate", mobj.RenderFlags.HasFlag(RENDER_MODE.NO_ZUPDATE));
             shader.SetBoolToInt("enableSpecular", parentJOBJ.Flags.HasFlag(JOBJ_FLAG.SPECULAR) && mobj.RenderFlags.HasFlag(RENDER_MODE.SPECULAR));
             shader.SetBoolToInt("enableDiffuse", parentJOBJ.Flags.HasFlag(JOBJ_FLAG.LIGHTING) && mobj.RenderFlags.HasFlag(RENDER_MODE.DIFFUSE));
             shader.SetBoolToInt("useConstant", mobj.RenderFlags.HasFlag(RENDER_MODE.CONSTANT));
@@ -392,10 +397,12 @@ namespace HSDRawViewer.Rendering
                         lightType = 1;
                     if (flags.HasFlag(TOBJ_FLAGS.LIGHTMAP_SPECULAR))
                         lightType = 2;
-                    if (flags.HasFlag(TOBJ_FLAGS.LIGHTMAP_EXT))
+                    if (flags.HasFlag(TOBJ_FLAGS.LIGHTMAP_AMBIENT))
                         lightType = 3;
-                    if (flags.HasFlag(TOBJ_FLAGS.LIGHTMAP_SHADOW))
+                    if (flags.HasFlag(TOBJ_FLAGS.LIGHTMAP_EXT))
                         lightType = 4;
+                    if (flags.HasFlag(TOBJ_FLAGS.LIGHTMAP_SHADOW))
+                        lightType = 5;
 
                     int coordType = (int)flags & 0xF;
                     int colorOP = ((int)flags >> 16) & 0xF;

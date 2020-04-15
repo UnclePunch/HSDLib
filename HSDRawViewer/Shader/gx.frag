@@ -43,7 +43,7 @@ uniform float alpha;
 
 
 // flags
-uniform int dfNone;
+uniform int no_zupdate;
 uniform int useConstant;
 uniform int useVertexColor;
 uniform int enableDiffuse;
@@ -169,10 +169,10 @@ vec4 ColorMap_Pass(vec4 passColor, int operation, int alphaOperation, sampler2D 
 	//if(operation == 6) // Pass
 
 	if(operation == 7) // Add
-		passColor.rgb += pass.rgb;
+		passColor.rgb += pass.rgb * pass.a;
 
 	if(operation == 8) // Subtract
-		passColor.rgb -= pass.rgb;
+		passColor.rgb -= pass.rgb * pass.a;
 			
 	
 	
@@ -271,7 +271,7 @@ void main()
 	fragColor.rgb = clamp(fragColor.rgb, ambientPass.rgb * fragColor.rgb, vec3(1));
 
 	vec4 extColor = vec4(1, 1, 1, 1);
-	if(hasTEX0 == 1 && TEX0LightType == 3)
+	if(hasTEX0 == 1 && TEX0LightType == 4)
 	{
 		extColor = ColorMap_Pass(
 		extColor, 
@@ -297,7 +297,7 @@ void main()
 		TEX0MirrorFix,
 		TEX0Blend);
 	}
-	if(hasTEX1 == 1 && TEX1LightType == 3)
+	if(hasTEX1 == 1 && TEX1LightType == 4)
 	{
 		extColor = ColorMap_Pass(
 		extColor, 
@@ -327,7 +327,7 @@ void main()
 	fragColor.a = diffusePass.a;
 
 	if(useVertexColor == 1)
-		fragColor *= vertexColor;
+		fragColor.rgb *= vertexColor.rgb * vertexColor.aaa;
 
 	fragColor.a *= alpha;
 		
