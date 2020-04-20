@@ -49,7 +49,7 @@ namespace HSDRawViewer.Converters
         /// </summary>
         /// <param name="table"></param>
         /// <param name="mex"></param>
-        public static void HookMexNode(SBM_SelectChrDataTable table, MEX_mexCSSData mex)
+        public static void HookMexNode(SBM_SelectChrDataTable table, MEX_mexSelectChr mex)
         { 
             // hook csps
             table.MenuMaterialAnimation.Children[6].Children[0].MaterialAnimation = mex.CSPMatAnim;
@@ -78,7 +78,7 @@ namespace HSDRawViewer.Converters
         /// <summary>
         /// 
         /// </summary>
-        public static void SetMexNode(MEX_mexCSSData mex, MEX_CSSIconEntry[] icons)
+        public static void SetMexNode(MEX_mexSelectChr mex, MEX_CSSIconEntry[] icons)
         {
             var posModel = GenerateIconModel(icons);
             mex.IconModel = posModel.Item1;
@@ -120,7 +120,7 @@ namespace HSDRawViewer.Converters
         /// <summary>
         /// 
         /// </summary>
-        public static void LoadFromMEXNode(MEX_mexCSSData mex, MEX_CSSIconEntry[] icons)
+        public static void LoadFromMEXNode(MEX_mexSelectChr mex, MEX_CSSIconEntry[] icons)
         {
             var csps = mex.CSPMatAnim.TextureAnimation.ToTOBJs();
             var cspKeys = mex.CSPMatAnim.TextureAnimation.AnimationObject.FObjDesc.GetDecodedKeys();
@@ -138,9 +138,6 @@ namespace HSDRawViewer.Converters
                     ico.MatAnimJoint = mex.IconMatAnimJoint.Children[index];
                 }
 
-                // convert to mex icon
-                ico.icon.ToMEXIcon(ico.Joint);
-                
                 // load csps
                 ico.CSPs.Clear();
                 int cspIndex = 0;
@@ -170,7 +167,7 @@ namespace HSDRawViewer.Converters
         /// <param name="table"></param>
         /// <param name="icons"></param>
         /// <returns></returns>
-        public static MEX_mexCSSData GenerateMEXMapFromVanilla(SBM_SelectChrDataTable table, MEX_CSSIconEntry[] icons)
+        public static MEX_mexSelectChr GenerateMEXMapFromVanilla(SBM_SelectChrDataTable table, MEX_CSSIconEntry[] icons)
         {
             // generate icon model
             var icon_joint = HSDAccessor.DeepClone<HSD_JOBJ>(table.MenuModel.Children[2].Child);
@@ -178,7 +175,7 @@ namespace HSDRawViewer.Converters
             icon_joint.TY = 0;
             icon_joint.TZ = 0;
             icon_joint.Next = null;
-            var center = CenterAndRegenerateIcon(icon_joint);
+            RegenerateIcon(icon_joint);
 
             var icon_matanim_joint = HSDAccessor.DeepClone<HSD_MatAnimJoint>(table.MenuMaterialAnimation.Children[2].Child);
             icon_matanim_joint.Next = null;
@@ -207,11 +204,9 @@ namespace HSDRawViewer.Converters
                 pos.Dobj.Next.Mobj.Textures = HSDAccessor.DeepClone<HSD_TOBJ>(joints[ico.icon.JointID].Dobj.Next.Mobj.Textures);
 
                 var worldPosition = Vector3.TransformPosition(Vector3.Zero, m.GetWorldTransform(ico.icon.JointID));
-                pos.TX = worldPosition.X + center.X;
-                pos.TY = worldPosition.Y + center.Y;
-                pos.TZ = worldPosition.Z + center.Z;
-                
-                ico.icon.ToMEXIcon(pos);
+                pos.TX = worldPosition.X;
+                pos.TY = worldPosition.Y;
+                pos.TZ = worldPosition.Z;
                 
                 ico.Joint = pos;
                 ico.AnimJoint = new HSD_AnimJoint();
@@ -240,7 +235,7 @@ namespace HSDRawViewer.Converters
             m.ClearRenderingCache();
 
 
-            MEX_mexCSSData mex = new MEX_mexCSSData();
+            MEX_mexSelectChr mex = new MEX_mexSelectChr();
 
             SetMexNode(mex, icons);
             
@@ -254,28 +249,8 @@ namespace HSDRawViewer.Converters
         /// 
         /// </summary>
         /// <param name="rootJOBJ"></param>
-        private static Vector3 CenterAndRegenerateIcon(HSD_JOBJ rootJOBJ)
+        private static void RegenerateIcon(HSD_JOBJ rootJOBJ)
         {
-            Vector3 Min = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
-            Vector3 Max = new Vector3(float.MinValue, float.MinValue, float.MinValue);
-
-            foreach (var jobj in rootJOBJ.BreathFirstList)
-                if (jobj.Dobj != null)
-                    foreach (var dobj in jobj.Dobj.List)
-                        if (dobj.Pobj != null)
-                            foreach (var pobj in dobj.Pobj.List)
-                                foreach (var v in pobj.ToDisplayList().Vertices)
-                                {
-                                    Min.X = Math.Min(Min.X, v.POS.X);
-                                    Min.Y = Math.Min(Min.Y, v.POS.Y);
-                                    Min.Z = Math.Min(Min.Z, v.POS.Z);
-                                    Max.X = Math.Max(Max.X, v.POS.X);
-                                    Max.Y = Math.Max(Max.Y, v.POS.Y);
-                                    Max.Z = Math.Max(Max.Z, v.POS.Z);
-                                }
-
-            var center = (Min + Max) / 2;
-
             var compressor = new POBJ_Generator();
             foreach (var jobj in rootJOBJ.BreathFirstList)
             {
@@ -301,17 +276,6 @@ namespace HSDRawViewer.Converters
                                         TriangleConverter.QuadToList(strip, out strip);
 
                                     off += pri.Count;
-                                    
-                                    for(int i = 0; i < strip.Count; i++)
-                                    {
-                                        var v = strip[i];
-
-                                        v.POS.X -= center.X;
-                                        v.POS.Y -= center.Y;
-                                        v.POS.Z -= center.Z;
-
-                                        strip[i] = v;
-                                    }
 
                                     triList.AddRange(strip);
                                 }
@@ -322,12 +286,6 @@ namespace HSDRawViewer.Converters
                     }
             }
             compressor.SaveChanges();
-
-            center.X *= rootJOBJ.SX;
-            center.Y *= rootJOBJ.SY;
-            center.Z *= rootJOBJ.SZ;
-
-            return center;
         }
     }
 }
