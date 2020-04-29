@@ -1,5 +1,6 @@
 ﻿using HSDRaw.Common.Animation;
 using HSDRaw.Tools;
+using HSDRawViewer.GUI;
 using HSDRawViewer.Rendering;
 using OpenTK;
 using System;
@@ -8,6 +9,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Windows.Forms;
 
 namespace HSDRawViewer.Converters
 {
@@ -41,6 +43,12 @@ namespace HSDRawViewer.Converters
         /// <param name="nodes"></param>
         public static void ExportToMayaAnim(string filePath, AnimManager animation)
         {
+            using (PropertyDialog d = new PropertyDialog("Maya Settings", MayaSettings))
+            {
+                if (d.ShowDialog() != DialogResult.OK)
+                    return;
+            }
+
             MayaAnim a = new MayaAnim();
 
             if (!MayaSettings.UseRadians)
@@ -56,18 +64,18 @@ namespace HSDRawViewer.Converters
                 
                 foreach(var t in n.Tracks)
                 {
-                    if (!jointTrackToMayaTrack.ContainsKey(t.TrackType))
+                    if (!jointTrackToMayaTrack.ContainsKey(t.JointTrackType))
                         continue;
 
                     MayaAnim.MayaTrack mtrack = new MayaAnim.MayaTrack();
                     mnode.atts.Add(mtrack);
 
-                    mtrack.type = jointTrackToMayaTrack[t.TrackType];
+                    mtrack.type = jointTrackToMayaTrack[t.JointTrackType];
 
                     if(mtrack.IsAngular())
                         mtrack.output = MayaAnim.OutputType.angular;
 
-                    AnimTrack.AnimState prevState = null;
+                    FOBJAnimState prevState = null;
                     for (int i = 0; i < t.Keys.Count; i++)
                     {
                         // get maximum frame to use as framecount
@@ -123,7 +131,13 @@ namespace HSDRawViewer.Converters
                         }
 
                         prevState = state;
-                        
+
+                        if (mtrack.IsAngular() && !MayaSettings.UseRadians)
+                        {
+                            animkey.output = MathHelper.RadiansToDegrees(animkey.output);
+                            //TODO: are slopes supposed to be degrees as well?
+                        }
+
                         // add final key
                         mtrack.keys.Add(animkey);
                     }
@@ -158,9 +172,9 @@ namespace HSDRawViewer.Converters
                 Debug.WriteLine(mNode.name);
                 foreach (var mTrack in mNode.atts)
                 {
-                    AnimTrack t = new AnimTrack();
+                    FOBJ_Player t = new FOBJ_Player();
                     t.Keys = new List<FOBJKey>();
-                    t.TrackType = jointTrackToMayaTrack.FirstOrDefault(e=>e.Value == mTrack.type).Key;
+                    t.JointTrackType = jointTrackToMayaTrack.FirstOrDefault(e=>e.Value == mTrack.type).Key;
 
                     Debug.WriteLine("\t" + mTrack.type);
 

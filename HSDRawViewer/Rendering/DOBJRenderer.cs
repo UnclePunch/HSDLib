@@ -141,6 +141,8 @@ namespace HSDRawViewer.Rendering
             GXShader.SetWorldTransformBones(jobjManager.GetWorldTransforms());
             //GXShader.SetBindTransformBones(jobjManager.GetBindTransforms());
 
+            GXShader.SetInt("selectedBone", jobjManager.IndexOf(jobjManager.SelectetedJOBJ));
+
             var tb = jobjManager.GetBindTransforms();
             if (tb.Length > 0)
                 GXShader.SetMatrix4x4("binds", tb);
@@ -187,22 +189,29 @@ namespace HSDRawViewer.Rendering
                 GL.Uniform4(GXShader.GetVertexAttributeUniformLocation("weights"), p.Weights.Length, ref p.Weights[0].X);
                 
                 GXShader.SetBoolToInt("hasEnvelopes", p.HasWeighting);
-                GXShader.SetBoolToInt("enableParentTransform", !p.Flag.HasFlag(POBJ_FLAG.PARENTTRANSFORM));
+                GXShader.SetBoolToInt("enableParentTransform", !p.Flag.HasFlag(POBJ_FLAG.UNKNOWN0));
                 //GXShader.SetInt("envelopeCount", p.EnvelopeCount);
 
                 GL.Enable(EnableCap.CullFace);
                 if (selected)
+                {
                     GL.PolygonMode(MaterialFace.Back, PolygonMode.Line);
+                }
                 else
                 if (p.Flag.HasFlag(POBJ_FLAG.CULLFRONT))
+                {
+                    GL.CullFace(CullFaceMode.Front);
                     GL.PolygonMode(MaterialFace.Front, PolygonMode.Fill);
+                }
                 else
                 if (p.Flag.HasFlag(POBJ_FLAG.CULLBACK))
+                {
+                    GL.CullFace(CullFaceMode.Back);
                     GL.PolygonMode(MaterialFace.Back, PolygonMode.Fill);
+                }
                 else
                 {
                     GL.Disable(EnableCap.CullFace);
-                    //GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
                 }
 
                 foreach (var dl in p.DisplayLists)

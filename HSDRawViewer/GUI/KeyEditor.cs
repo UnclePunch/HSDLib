@@ -46,7 +46,8 @@ namespace HSDRawViewer.GUI
             {
                 var hti = dataGridView1.HitTest(args.X, args.Y);
                 dataGridView1.ClearSelection();
-                dataGridView1.Rows[hti.RowIndex].Selected = true;
+                if(hti != null && hti.RowIndex != -1)
+                    dataGridView1.Rows[hti.RowIndex].Selected = true;
             };
 
             dataGridView1.MouseClick += (sender, args) =>
@@ -316,7 +317,7 @@ namespace HSDRawViewer.GUI
             if (spaces % 5 != 0)
                 spaces += 5 - (spaces % 5);
 
-            AnimTrack a = new AnimTrack();
+            FOBJ_Player a = new FOBJ_Player();
             a.Keys = GetFOBJKeys();
 
             for (int i = 0; i < KeyFrames.Count; i++)

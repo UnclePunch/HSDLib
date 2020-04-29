@@ -322,9 +322,9 @@ namespace HSDRaw
         /// Saves dat data to filepath
         /// </summary>
         /// <param name="fileName"></param>
-        public void Save(string fileName, bool bufferAlign = true, bool optimize = true)
+        public void Save(string fileName, bool bufferAlign = true, bool optimize = true, bool trim = false)
         {
-            Save(new FileStream(fileName, FileMode.Create), bufferAlign, optimize);
+            Save(new FileStream(fileName, FileMode.Create), bufferAlign, optimize, trim);
         }
         
         /// <summary>
@@ -454,14 +454,26 @@ namespace HSDRaw
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        public void TrimData()
+        {
+            foreach (var r in Roots)
+                r.Data.Trim();
+        }
+
+        /// <summary>
         /// saves dat data to stream with optional alignment
         /// </summary>
         /// <param name="stream"></param>
         /// <param name="bufferAlign"></param>
-        public void Save(Stream stream, bool bufferAlign = true, bool optimize = true)
+        public void Save(Stream stream, bool bufferAlign = true, bool optimize = true, bool trim = false)
         {
             if (Roots.Count > 0 && Roots[0].Data is MEX_Data)
                 bufferAlign = false;
+
+            if (trim)
+                TrimData();
 
             // gather all structs--------------------------------------------------------------------------
             var allStructs = GetAllStructs();
@@ -481,6 +493,7 @@ namespace HSDRaw
                     //TODO: this may be bugged?
                     if (_structCache.Contains(s))
                     {
+                        System.Diagnostics.Debug.WriteLine("Removing " + s.Length.ToString("X") + " " + GetOffsetFromStruct(s).ToString("X"));
                         _structCache.Remove(s);
                     }
                 }
@@ -878,6 +891,13 @@ namespace HSDRaw
             if (rootString.StartsWith("mexSelectChr"))
             {
                 var acc = new MEX_mexSelectChr();
+                acc._s = str;
+                a = acc;
+            }
+            else
+            if (rootString.StartsWith("mobj"))
+            {
+                var acc = new HSD_MOBJ();
                 acc._s = str;
                 a = acc;
             }

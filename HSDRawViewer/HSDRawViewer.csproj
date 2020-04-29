@@ -143,10 +143,12 @@
     <Compile Include="Converters\MexCssGenerator.cs" />
     <Compile Include="Converters\MexFighterConverter.cs" />
     <Compile Include="Converters\MexMapGenerator.cs" />
+    <Compile Include="Converters\MexMenuAnimationGenerator.cs" />
     <Compile Include="Converters\ModelExporter.cs" />
     <Compile Include="Converters\ModelImporter.cs" />
     <Compile Include="Converters\ModeltoCollData.cs" />
     <Compile Include="Converters\MOTLoader.cs" />
+    <Compile Include="Converters\OutlineGenerator.cs" />
     <Compile Include="Converters\PlayStruct.cs" />
     <Compile Include="Converters\TOBJConverter.cs" />
     <Compile Include="DataNode.cs" />
@@ -356,7 +358,6 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RawHSD.cs" />
-    <Compile Include="Rendering\AnimationTrack.cs" />
     <Compile Include="Rendering\Camera.cs" />
     <Compile Include="Rendering\DOBJRenderer.cs" />
     <Compile Include="Rendering\Renderers\HurtboxRenderer.cs" />

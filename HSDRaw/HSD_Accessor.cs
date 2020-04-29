@@ -32,6 +32,39 @@ namespace HSDRaw
         }
 
         /// <summary>
+        /// Warning: Experimental DO not use
+        /// </summary>
+        public virtual int Trim()
+        {
+            var trimmed = 0;
+
+            if (TrimmedSize != -1 && _s.Length > TrimmedSize 
+                && GetType() != typeof(Common.HSD_DOBJ)) // skip dobj for unknown reasons
+            {
+                System.Diagnostics.Debug.WriteLine(GetType().Name + ": 0x" + _s.Length.ToString("X") + " => 0x" + TrimmedSize.ToString("X"));
+                trimmed += _s.Length - TrimmedSize;
+                _s.Resize(TrimmedSize);
+            }
+
+            foreach (var v in GetType().GetProperties())
+            {
+                if (v.PropertyType.IsSubclassOf(typeof(HSDAccessor)) && v.GetIndexParameters().Length == 0 && v.GetValue(this) is HSDAccessor ac)
+                {
+                    if(ac != this)
+                        trimmed += ac.Trim();
+                }
+                if (v.PropertyType.IsArray && v.GetValue(this) is HSDAccessor[] arr)
+                {
+                    foreach (var ai in arr)
+                        if(ai != null && ai != this)
+                            trimmed += ai.Trim();
+                }
+            }
+
+            return trimmed;
+        }
+        
+        /// <summary>
         /// Returns a deep clone of given accessor
         /// </summary>
         /// <typeparam name="T"></typeparam>

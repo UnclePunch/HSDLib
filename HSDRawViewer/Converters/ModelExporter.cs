@@ -21,6 +21,8 @@ namespace HSDRawViewer.Converters
 
         public bool FlipUVs { get; set; } = false;
 
+        public bool ExportBindPose { get; set; } = true;
+
         public bool ExportMOBJs { get; set; } = false;
 
         public bool ExportTransformedUVs { get => ModelExporter.TransformUVS; set => ModelExporter.TransformUVS = value; }
@@ -399,7 +401,7 @@ namespace HSDRawViewer.Converters
         {
             Scene.RootNode = RootNode;
 
-            RecursiveExport(root, RootNode, Matrix4.Identity, boneLabels, nodeToJOBJ);
+            RecursiveExport(settings, root, RootNode, Matrix4.Identity, boneLabels, nodeToJOBJ);
 
             WriteDOBJNodes(settings);
 
@@ -409,7 +411,7 @@ namespace HSDRawViewer.Converters
         /// <summary>
         /// 
         /// </summary>
-        private void RecursiveExport(HSD_JOBJ jobj, Node parent, Matrix4 parentTransform, Dictionary<int, string> indexToName, Dictionary<Node, HSD_JOBJ> nodeToJOBJ)
+        private void RecursiveExport(ModelExportSettings settings, HSD_JOBJ jobj, Node parent, Matrix4 parentTransform, Dictionary<int, string> indexToName, Dictionary<Node, HSD_JOBJ> nodeToJOBJ)
         {
             Node root = new Node();
             nodeToJOBJ.Add(root, jobj);
@@ -424,8 +426,8 @@ namespace HSDRawViewer.Converters
             Matrix4 Transform = Matrix4.CreateScale(jobj.SX, jobj.SY, jobj.SZ) *
                 Matrix4.CreateFromQuaternion(Math3D.FromEulerAngles(jobj.RZ, jobj.RY, jobj.RX)) *
                 Matrix4.CreateTranslation(jobj.TX, jobj.TY, jobj.TZ);
-
-            if (jobj.InverseWorldTransform != null)
+            
+            if (jobj.InverseWorldTransform != null && settings.ExportBindPose)
             {
                 var mat = jobj.InverseWorldTransform;
                 var inv = new Matrix4(
@@ -448,7 +450,7 @@ namespace HSDRawViewer.Converters
 
             foreach (var c in jobj.Children)
             {
-                RecursiveExport(c, root, worldTransform, indexToName, nodeToJOBJ);
+                RecursiveExport(settings, c, root, worldTransform, indexToName, nodeToJOBJ);
             }
         }
 
@@ -625,7 +627,7 @@ namespace HSDRawViewer.Converters
                 foreach (var v in verts)
                 {
                     vIndex++;
-                    if (parent != null && jobjToIndex[parent] != 0)
+                    if (parent != null && jobjToIndex[parent] != 0 && !parent.Flags.HasFlag(JOBJ_FLAG.SKELETON_ROOT))
                     {
                         var vertexWeight = new VertexWeight();
                         vertexWeight.VertexID = vIndex;
@@ -662,14 +664,22 @@ namespace HSDRawViewer.Converters
 
                                 break;
                             case GXAttribName.GX_VA_POS:
-                                var vert = Vector3.TransformPosition(GXTranslator.toVector3(v.POS), pobj.Flags.HasFlag(POBJ_FLAG.PARENTTRANSFORM) ? Matrix4.Identity : parentTransform);
+                                var vert = Vector3.TransformPosition(GXTranslator.toVector3(v.POS), pobj.Flags.HasFlag(POBJ_FLAG.UNKNOWN0) ? Matrix4.Identity : parentTransform);
                                 if (parent.Flags.HasFlag(JOBJ_FLAG.SKELETON) || parent.Flags.HasFlag(JOBJ_FLAG.SKELETON_ROOT))
                                     vert = Vector3.TransformPosition(vert, weight);
                                 vert = Vector3.TransformPosition(vert, singleBindTransform);
                                 m.Vertices.Add(new Vector3D(vert.X, vert.Y, vert.Z));
                                 break;
                             case GXAttribName.GX_VA_NRM:
-                                var nrm = Vector3.TransformNormal(GXTranslator.toVector3(v.NRM), pobj.Flags.HasFlag(POBJ_FLAG.PARENTTRANSFORM) ? Matrix4.Identity : parentTransform);
+                                var nrm = GXTranslator.toVector3(v.NRM);
+                                try
+                                {
+                                    nrm = Vector3.TransformNormal(nrm, pobj.Flags.HasFlag(POBJ_FLAG.UNKNOWN0) ? Matrix4.Identity : parentTransform);
+                                }
+                                catch (InvalidOperationException)
+                                {
+
+                                }
                                 if (parent.Flags.HasFlag(JOBJ_FLAG.SKELETON) || parent.Flags.HasFlag(JOBJ_FLAG.SKELETON_ROOT))
                                     nrm = Vector3.TransformNormal(nrm, weight);
                                 nrm = Vector3.TransformNormal(nrm, singleBindTransform);
