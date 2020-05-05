@@ -94,7 +94,7 @@ namespace HSDRawViewer.Rendering
         /// <param name="dobj"></param>
         /// <param name="parentJOBJ"></param>
         /// <param name="jobjManager"></param>
-        public void RenderDOBJShader(Camera camera, HSD_DOBJ dobj, HSD_JOBJ parentJOBJ, JOBJManager jobjManager, bool selected = false)
+        public void RenderDOBJShader(Camera camera, HSD_DOBJ dobj, HSD_JOBJ parentJOBJ, JOBJManager jobjManager, MatAnimManager animation, bool selected = false)
         {
             if (dobj.Pobj == null)
                 return;
@@ -156,7 +156,7 @@ namespace HSDRawViewer.Rendering
             GXShader.SetMatrix4x4("sphereMatrix", ref sphereMatrix);
 
             if (mobj != null)
-                BindMOBJ(GXShader, mobj, parentJOBJ);
+                BindMOBJ(GXShader, mobj, parentJOBJ, animation);
 
             GL.BindBuffer(BufferTarget.ArrayBuffer, DOBJtoBuffer[dobj]);
 
@@ -308,7 +308,7 @@ namespace HSDRawViewer.Rendering
         /// 
         /// </summary>
         /// <param name="mobj"></param>
-        private void BindMOBJ(Shader shader, HSD_MOBJ mobj, HSD_JOBJ parentJOBJ)
+        private void BindMOBJ(Shader shader, HSD_MOBJ mobj, HSD_JOBJ parentJOBJ, MatAnimManager animation)
         {
             GL.Enable(EnableCap.Texture2D);
 
@@ -334,6 +334,10 @@ namespace HSDRawViewer.Rendering
             var color = mobj.Material;
             if (color != null)
             {
+                if (animation != null)
+                {
+                    color = animation.GetMaterialState(mobj).Item1;
+                }
                 shader.SetVector4("ambientColor", color.AMB_R / 255f, color.AMB_G / 255f, color.AMB_B / 255f, color.AMB_A / 255f);
                 shader.SetVector4("diffuseColor", color.DIF_R / 255f, color.DIF_G / 255f, color.DIF_B / 255f, color.DIF_A / 255f);
                 shader.SetVector4("specularColor", color.SPC_R / 255f, color.SPC_G / 255f, color.SPC_B / 255f, color.SPC_A / 255f);
@@ -354,19 +358,6 @@ namespace HSDRawViewer.Rendering
 
             var id = Matrix4.Identity;
 
-            for(int index = 0; index < 2; index++)
-            {
-                shader.SetInt($"TEX{index}", index);
-                shader.SetInt($"TEX{index}LightType", 0);
-                shader.SetInt($"TEX{index}ColorOperation", 0);
-                shader.SetInt($"TEX{index}AlphaOperation", 0);
-                shader.SetInt($"TEX{index}CoordType", 0);
-                shader.SetInt($"TEX{index}Blend", 1);
-                shader.SetBoolToInt($"TEX{index}MirrorFix", false);
-                shader.SetVector2($"TEX{index}UVScale", 1, 1);
-                shader.SetMatrix4x4($"TEX{index}Transform", ref id);
-            }
-
             // Bind Textures
             if (mobj.Textures != null)
             {
@@ -374,19 +365,39 @@ namespace HSDRawViewer.Rendering
                 foreach (var tex in mobj.Textures.List)
                 {
                     index++;
+
                     if (index > 1)
                         break;
-                    if (tex.ImageData == null)
+
+                    var renderTex = tex;
+
+                    if (renderTex.ImageData == null)
                         continue;
 
-                    if (!imageBufferTextureIndex.ContainsKey(tex.ImageData.ImageData))
+                    var blending = tex.Blending;
+
+                    var transform = Matrix4.CreateScale(tex.SX, tex.SY, tex.SZ) *
+                        Matrix4.CreateFromQuaternion(Math3D.FromEulerAngles(tex.RZ, tex.RY, tex.RX)) *
+                        Matrix4.CreateTranslation(tex.TX, tex.TY, tex.TZ);
+
+                    transform.Invert();
+
+                    if (animation != null)
                     {
-                        imageBufferTextureIndex.Add(tex.ImageData.ImageData, TextureManager.TextureCount);
-                        TextureManager.Add(tex.GetDecodedImageData(), tex.ImageData.Width, tex.ImageData.Height);
+                        var state = animation.GetTextureAnimState(renderTex);
+                        renderTex = state.Item1;
+                        blending = state.Item2;
+                        transform = state.Item3;
+                    }
+
+                    if (!imageBufferTextureIndex.ContainsKey(renderTex.ImageData.ImageData))
+                    {
+                        imageBufferTextureIndex.Add(renderTex.ImageData.ImageData, TextureManager.TextureCount);
+                        TextureManager.Add(renderTex.GetDecodedImageData(), renderTex.ImageData.Width, renderTex.ImageData.Height);
                         continue;
                     }
 
-                    var texid = TextureManager.Get(imageBufferTextureIndex[tex.ImageData.ImageData]);
+                    var texid = TextureManager.Get(imageBufferTextureIndex[renderTex.ImageData.ImageData]);
 
                     GL.ActiveTexture(TextureUnit.Texture0 + index);
                     GL.BindTexture(TextureTarget.Texture2D, texid);
@@ -417,22 +428,43 @@ namespace HSDRawViewer.Rendering
                     int coordType = (int)flags & 0xF;
                     int colorOP = ((int)flags >> 16) & 0xF;
                     int alphaOP = ((int)flags >> 20) & 0xF;
-
-                    var transform = Matrix4.CreateScale(tex.SX, tex.SY, tex.SZ) *
-                        Matrix4.CreateFromQuaternion(Math3D.FromEulerAngles(tex.RZ, tex.RY, tex.RX)) *
-                        Matrix4.CreateTranslation(tex.TX, tex.TY, tex.TZ);
-
-                    transform.Invert();
                     
-                    shader.SetInt($"TEX{index}", index);
-                    shader.SetInt($"TEX{index}LightType", lightType);
-                    shader.SetInt($"TEX{index}ColorOperation", colorOP);
-                    shader.SetInt($"TEX{index}AlphaOperation", alphaOP);
-                    shader.SetInt($"TEX{index}CoordType", coordType);
-                    shader.SetFloat($"TEX{index}Blend", tex.Blending);
-                    shader.SetBoolToInt($"TEX{index}MirrorFix", mirrorY);
-                    shader.SetVector2($"TEX{index}UVScale", wscale, hscale);
-                    shader.SetMatrix4x4($"TEX{index}Transform", ref transform);
+                    shader.SetInt($"TEX{index}.tex", index);
+                    shader.SetInt($"TEX{index}.light_type", lightType);
+                    shader.SetInt($"TEX{index}.color_operation", colorOP);
+                    shader.SetInt($"TEX{index}.alpha_operation", alphaOP);
+                    shader.SetInt($"TEX{index}.coord_type", coordType);
+                    shader.SetFloat($"TEX{index}.blend", blending);
+                    shader.SetBoolToInt($"TEX{index}.mirror_fix", mirrorY);
+                    shader.SetVector2($"TEX{index}.uv_scale", wscale, hscale);
+                    shader.SetMatrix4x4($"TEX{index}.transform", ref transform);
+
+                    var tev = tex.TEV;
+                    shader.SetBoolToInt($"hasTEX{index}Tev", tev != null);
+                    if (tev != null)
+                    {
+                        shader.SetInt($"TEX{index}Tev.color_op", (int)tev.color_op);
+                        shader.SetInt($"TEX{index}Tev.color_bias", (int)tev.color_bias);
+                        shader.SetInt($"TEX{index}Tev.color_scale", (int)tev.color_scale);
+                        shader.SetBoolToInt($"TEX{index}Tev.color_clamp", tev.color_clamp);
+                        shader.SetInt($"TEX{index}Tev.color_a", (int)tev.color_a_in);
+                        shader.SetInt($"TEX{index}Tev.color_b", (int)tev.color_b_in);
+                        shader.SetInt($"TEX{index}Tev.color_c", (int)tev.color_c_in);
+                        shader.SetInt($"TEX{index}Tev.color_d", (int)tev.color_d_in);
+
+                        shader.SetInt($"TEX{index}Tev.alpha_op", (int)tev.alpha_op);
+                        shader.SetInt($"TEX{index}Tev.alpha_bias", (int)tev.alpha_bias);
+                        shader.SetInt($"TEX{index}Tev.alpha_scale", (int)tev.alpha_scale);
+                        shader.SetBoolToInt($"TEX{index}Tev.alpha_clamp", tev.alpha_clamp);
+                        shader.SetInt($"TEX{index}Tev.alpha_a", (int)tev.alpha_a_in);
+                        shader.SetInt($"TEX{index}Tev.alpha_b", (int)tev.alpha_b_in);
+                        shader.SetInt($"TEX{index}Tev.alpha_c", (int)tev.alpha_c_in);
+                        shader.SetInt($"TEX{index}Tev.alpha_d", (int)tev.alpha_d_in);
+
+                        shader.SetColor($"TEX{index}Tev.konst", tev.constant, tev.constantAlpha);
+                        shader.SetColor($"TEX{index}Tev.tev0", tev.tev0, tev.tev0Alpha);
+                        shader.SetColor($"TEX{index}Tev.tev1", tev.tev1, tev.tev1Alpha);
+                    }
                 }
             }
         }

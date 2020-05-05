@@ -86,7 +86,7 @@ namespace HSDRawViewer.GUI.Plugins
                         PluginManager.GetCommonViewport().RemoveRenderer(this);
                     }
                     viewport.Dispose();
-                    JOBJManager.ClearRenderingCache();
+                    JOBJManager.CleanupRendering();
                 }
             };
         }
@@ -208,7 +208,7 @@ namespace HSDRawViewer.GUI.Plugins
             return false;
         }
 
-        public void LoadAnimation(AnimManager animation)
+        public void LoadAnimation(JointAnimManager animation)
         {
             var vp = viewport;
             vp.AnimationTrackEnabled = true;
@@ -233,6 +233,15 @@ namespace HSDRawViewer.GUI.Plugins
             vp.AnimationTrackEnabled = true;
             vp.Frame = 0;
             vp.MaxFrame = JOBJManager.Animation.FrameCount;
+        }
+
+        public void LoadAnimation(HSD_MatAnimJoint joint)
+        {
+            JOBJManager.SetMatAnimJoint(joint);
+            var vp = viewport;
+            vp.AnimationTrackEnabled = true;
+            vp.Frame = 0;
+            vp.MaxFrame = JOBJManager.MatAnimation.FrameCount;
         }
 
         /// <summary>
@@ -330,7 +339,7 @@ namespace HSDRawViewer.GUI.Plugins
         private void importModelFromFileToolStripMenuItem_Click(object sender, EventArgs e)
         {
             ModelImporter.ReplaceModelFromFile(root);
-            JOBJManager.ClearRenderingCache();
+            JOBJManager.RefreshRendering = true;
             BoneLabelMap.Clear();
             RefreshGUI();
         }
@@ -598,7 +607,7 @@ namespace HSDRawViewer.GUI.Plugins
                 {
                     v.DOBJ.Pobj = null;
                 }
-                JOBJManager.ClearRenderingCache();
+                JOBJManager.RefreshRendering = true;
                 RefreshGUI();
             }
         }
@@ -631,7 +640,7 @@ namespace HSDRawViewer.GUI.Plugins
                         prev = d;
                     }
 
-                    JOBJManager.ClearRenderingCache();
+                    JOBJManager.RefreshRendering = true;
                     RefreshGUI();
                 }
             }
@@ -934,10 +943,17 @@ namespace HSDRawViewer.GUI.Plugins
                 {
                     HSDRawFile file = new HSDRawFile(f);
 
-                    if (file.Roots.Count > 0 && file.Roots[0].Data is HSD_MOBJ mobj)
-                        con.DOBJ.Mobj = mobj;
+                    if (file.Roots.Count > 0)
+                    {
+                        var mobj = new HSD_MOBJ();
+                        if(file.Roots[0].Data._s.Length >= mobj.TrimmedSize)
+                        {
+                            mobj._s = file.Roots[0].Data._s;
+                            con.DOBJ.Mobj = mobj;
+                        }
+                    }
 
-                    JOBJManager.ClearRenderingCache();
+                    JOBJManager.RefreshRendering = true;
                 }
             }
         }
