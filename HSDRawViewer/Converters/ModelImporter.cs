@@ -96,7 +96,6 @@ namespace HSDRawViewer.Converters
         public GXTlutFmt PaletteFormat { get; set; } = GXTlutFmt.RGB565;
 
 
-
         [Category("Misc"), DisplayName("Apply Fighter Transform (Melee Fighter Only)"), Description("Applies fighter transforms for use with Super Smash Bros. Melee")]
         public bool ZeroOutRotationsAndApplyFighterTransforms { get; set; } = false;
         
@@ -133,6 +132,8 @@ namespace HSDRawViewer.Converters
 
         // keeps matches texture path to dobj for better grouping options
         public Dictionary<string, HSD_DOBJ> TextureToDOBJ = new Dictionary<string, HSD_DOBJ>();
+
+        public bool HasXLU = false;
     }
 
 
@@ -198,7 +199,8 @@ namespace HSDRawViewer.Converters
             var rootjobj = RecursiveProcess(cache, Settings, importmodel, importmodel.RootNode);
             
             // get root of skeleton
-            rootjobj = rootjobj.Child;
+            if(rootjobj.Child != null)
+                rootjobj = rootjobj.Child;
             rootjobj.Flags = 0;
 
             rootjobj.Flags |= JOBJ_FLAG.SKELETON_ROOT;
@@ -222,8 +224,6 @@ namespace HSDRawViewer.Converters
 
                 ProgressStatus = $"Processing Mesh {rootjobj.Dobj.List.Count} {cache.MeshNodes.Count + 1}...";
                 w.ReportProgress((int)(30 + 60 * (rootjobj.Dobj.List.Count / (float)cache.MeshNodes.Count)));
-
-                rootjobj.Flags |= JOBJ_FLAG.OPA;
                 
                 //TODO:
                 //if (c.Flags.HasFlag(JOBJ_FLAG.OPA) || c.Flags.HasFlag(JOBJ_FLAG.ROOT_OPA))
@@ -238,6 +238,13 @@ namespace HSDRawViewer.Converters
             // SKELETON 
             if (cache.EnvelopedJOBJs.Count > 0)
                 rootjobj.Flags |= JOBJ_FLAG.ENVELOPE_MODEL;
+
+            // Transparency 
+            if (cache.HasXLU)
+                rootjobj.Flags |= JOBJ_FLAG.XLU;
+
+            // Opa
+            rootjobj.Flags |= JOBJ_FLAG.OPA;
 
             foreach (var jobj in cache.EnvelopedJOBJs)
             {
@@ -327,30 +334,16 @@ namespace HSDRawViewer.Converters
         /// <param name="rootjobj"></param>
         private static void ApplyNarutoMaterials(HSD_JOBJ rootjobj)
         {
-            rootjobj.Flags = JOBJ_FLAG.SKELETON_ROOT | JOBJ_FLAG.ENVELOPE_MODEL | JOBJ_FLAG.LIGHTING | JOBJ_FLAG.OPA | JOBJ_FLAG.ROOT_OPA;
-
             foreach (var j in rootjobj.BreathFirstList)
             {
                 if (j.Dobj != null)
                     foreach (var d in j.Dobj.List)
                     {
-                        d.Mobj.RenderFlags = RENDER_MODE.DIFFUSE;
-                        if (d.Mobj.Textures != null)
-                            d.Mobj.RenderFlags |= RENDER_MODE.TEX0;
-
                         d.Mobj.Material.SPC_A = 255;
                         d.Mobj.Material.SPC_B = 0;
                         d.Mobj.Material.SPC_G = 0;
                         d.Mobj.Material.SPC_R = 0;
                         d.Mobj.Material.Shininess = 50;
-
-                        if (d.Mobj.Textures != null)
-                        {
-                            foreach (var t in d.Mobj.Textures.List)
-                            {
-                                t.Flags = TOBJ_FLAGS.COORD_UV | TOBJ_FLAGS.LIGHTMAP_DIFFUSE | TOBJ_FLAGS.COLORMAP_BLEND;
-                            }
-                        }
                     }
             }
         }
@@ -417,15 +410,15 @@ namespace HSDRawViewer.Converters
             if(settings.ImportBoneNames)
                 jobj.ClassName = node.Name;
             jobj.Flags = JOBJ_FLAG.CLASSICAL_SCALING;
-            jobj.TX = translation.X;
-            jobj.TY = translation.Y;
-            jobj.TZ = translation.Z;
-            jobj.RX = rotation.X;
-            jobj.RY = rotation.Y;
-            jobj.RZ = rotation.Z;
-            jobj.SX = scale.X;
-            jobj.SY = scale.Y;
-            jobj.SZ = scale.Z;
+            jobj.TX = RoundFloat(translation.X);
+            jobj.TY = RoundFloat(translation.Y);
+            jobj.TZ = RoundFloat(translation.Z);
+            jobj.RX = RoundFloat(rotation.X);
+            jobj.RY = RoundFloat(rotation.Y);
+            jobj.RZ = RoundFloat(rotation.Z);
+            jobj.SX = RoundFloat(scale.X);
+            jobj.SY = RoundFloat(scale.Y);
+            jobj.SZ = RoundFloat(scale.Z);
 
             if (node.HasMeshes)
                 cache.MeshNodes.Add(node);
@@ -437,6 +430,19 @@ namespace HSDRawViewer.Converters
             }
 
             return jobj;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="f"></param>
+        /// <returns></returns>
+        private static float RoundFloat(float f)
+        {
+            if (Math.Abs(f) < 0.000001)
+                return 0;
+            else
+                return f;
         }
 
         /// <summary>
@@ -604,6 +610,24 @@ namespace HSDRawViewer.Converters
                 if ((mesh.HasTextureCoords(1) || (dobj.Mobj.Textures != null && dobj.Mobj.Textures.List.Count > 1)) && !hasReflection)
                     Attributes.Add(GXAttribName.GX_VA_TEX1);
 
+                if ((mesh.HasTextureCoords(2) || (dobj.Mobj.Textures != null && dobj.Mobj.Textures.List.Count > 2)) && !hasReflection)
+                    Attributes.Add(GXAttribName.GX_VA_TEX2);
+
+                if ((mesh.HasTextureCoords(3) || (dobj.Mobj.Textures != null && dobj.Mobj.Textures.List.Count > 3)) && !hasReflection)
+                    Attributes.Add(GXAttribName.GX_VA_TEX3);
+
+                if ((mesh.HasTextureCoords(4) || (dobj.Mobj.Textures != null && dobj.Mobj.Textures.List.Count > 4)) && !hasReflection)
+                    Attributes.Add(GXAttribName.GX_VA_TEX4);
+
+                if ((mesh.HasTextureCoords(5) || (dobj.Mobj.Textures != null && dobj.Mobj.Textures.List.Count > 5)) && !hasReflection)
+                    Attributes.Add(GXAttribName.GX_VA_TEX5);
+
+                if ((mesh.HasTextureCoords(6) || (dobj.Mobj.Textures != null && dobj.Mobj.Textures.List.Count > 6)) && !hasReflection)
+                    Attributes.Add(GXAttribName.GX_VA_TEX6);
+
+                if ((mesh.HasTextureCoords(7) || (dobj.Mobj.Textures != null && dobj.Mobj.Textures.List.Count > 7)) && !hasReflection)
+                    Attributes.Add(GXAttribName.GX_VA_TEX7);
+
                 var vertices = new List<GX_Vertex>();
                 var jobjList = new List<HSD_JOBJ[]>(vertices.Count);
                 var wList = new List<float[]>(vertices.Count);
@@ -720,6 +744,36 @@ namespace HSDRawViewer.Converters
                                 mesh.TextureCoordinateChannels[1][indicie].X,
                                 mesh.TextureCoordinateChannels[1][indicie].Y);
 
+                        if (mesh.HasTextureCoords(2))
+                            vertex.TEX2 = new GXVector2(
+                                mesh.TextureCoordinateChannels[2][indicie].X,
+                                mesh.TextureCoordinateChannels[2][indicie].Y);
+
+                        if (mesh.HasTextureCoords(3))
+                            vertex.TEX3 = new GXVector2(
+                                mesh.TextureCoordinateChannels[3][indicie].X,
+                                mesh.TextureCoordinateChannels[3][indicie].Y);
+
+                        if (mesh.HasTextureCoords(4))
+                            vertex.TEX4 = new GXVector2(
+                                mesh.TextureCoordinateChannels[4][indicie].X,
+                                mesh.TextureCoordinateChannels[4][indicie].Y);
+
+                        if (mesh.HasTextureCoords(5))
+                            vertex.TEX5 = new GXVector2(
+                                mesh.TextureCoordinateChannels[5][indicie].X,
+                                mesh.TextureCoordinateChannels[5][indicie].Y);
+
+                        if (mesh.HasTextureCoords(6))
+                            vertex.TEX6 = new GXVector2(
+                                mesh.TextureCoordinateChannels[6][indicie].X,
+                                mesh.TextureCoordinateChannels[6][indicie].Y);
+
+                        if (mesh.HasTextureCoords(7))
+                            vertex.TEX7 = new GXVector2(
+                                mesh.TextureCoordinateChannels[7][indicie].X,
+                                mesh.TextureCoordinateChannels[7][indicie].Y);
+
                         if (mesh.HasVertexColors(0))
                             vertex.CLR0 = new GXColor4(
                                 mesh.VertexColorChannels[0][indicie].R * (settings.MultiplyVertexColorBy2 ? 2 : 1),
@@ -783,6 +837,7 @@ namespace HSDRawViewer.Converters
             Mobj.Material.SpecularColor = System.Drawing.Color.White;
             Mobj.Material.Shininess = 50;
             Mobj.Material.Alpha = 1;
+
             if (settings.ImportVertexColor)
                 Mobj.RenderFlags |= RENDER_MODE.VERTEX;
 
@@ -848,7 +903,7 @@ namespace HSDRawViewer.Converters
                         return Mobj;
                     }
                     else
-                    if (File.Exists(texturePath) && texturePath.EndsWith(".png"))
+                    if (File.Exists(texturePath) && (texturePath.ToLower().EndsWith(".png") || texturePath.ToLower().EndsWith(".bmp")))
                     {
                         Mobj.RenderFlags |= RENDER_MODE.TEX0;
 
@@ -860,6 +915,13 @@ namespace HSDRawViewer.Converters
 
                         tobj.WrapS = ToGXWrapMode(material.TextureDiffuse.WrapModeU);
                         tobj.WrapT = ToGXWrapMode(material.TextureDiffuse.WrapModeV);
+
+                        if (TOBJConverter.IsTransparent(tobj))
+                        {
+                            cache.HasXLU = true;
+                            Mobj.RenderFlags |= RENDER_MODE.XLU | RENDER_MODE.NO_ZUPDATE;
+                            tobj.Flags |= TOBJ_FLAGS.ALPHAMAP_MODULATE;
+                        }
 
                         Mobj.Textures = tobj;
                     }

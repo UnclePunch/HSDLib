@@ -361,43 +361,19 @@ namespace HSDRawViewer.GUI.Plugins
 
             var tobjs = GetTOBJs();
 
-            var f = Tools.FileIO.OpenFile("PNG (.png)|*.png");
+            var f = Tools.FileIO.OpenFile(ApplicationSettings.ImageFileFilter);
             if (f != null)
             {
                 if (tobjs.Length == 1)
                 {
-                    using (TextureImportDialog settings = new TextureImportDialog())
-                    {
-                        if (settings.ShowDialog() == DialogResult.OK)
-                        {
-                            using (Bitmap bmp = new Bitmap(f))
-                            {
-                                settings.ApplySettings(bmp);
-                                TOBJConverter.InjectBitmap(tobjs[index], bmp, settings.TextureFormat, settings.PaletteFormat);
-                            }
-                        }
-                        else
-                        {
-                            return;
-                        }
-                    }
+                    TOBJConverter.InjectBitmap(f, tobjs[index]);
                 }
                 else
                 {
                     var beforeH = tobjs[index].ImageData.Height;
                     var beforeW = tobjs[index].ImageData.Width;
 
-                    var bmp = new Bitmap(f);
-
-                    /*if (beforeW != bmp.Width || beforeH != bmp.Height)
-                    {
-                        MessageBox.Show($"Error the texture size does not match\n{beforeW}x{beforeH} -> {bmp.Width}x{bmp.Height}");
-                        return;
-                    }*/
-
-                    bmp.Dispose();
-
-                    TOBJConverter.InjectBitmap(tobjs[index], f, tobjs[index].ImageData.Format, tobjs[index].TlutData != null ? tobjs[index].TlutData.Format : GXTlutFmt.IA8);
+                    TOBJConverter.InjectBitmap(f, tobjs[index], tobjs[index].ImageData.Format, tobjs[index].TlutData != null ? tobjs[index].TlutData.Format : GXTlutFmt.IA8);
                 }
             }
             else
@@ -446,7 +422,7 @@ namespace HSDRawViewer.GUI.Plugins
             var tobjs = GetTOBJs();
 
             HSD_TOBJ tobj;
-            var f = Tools.FileIO.OpenFiles("PNG (.png)|*.png");
+            var f = Tools.FileIO.OpenFiles(ApplicationSettings.ImageFileFilter);
             if (f != null)
             {
                 GXTexFmt texFormat = GXTexFmt.CMP;
@@ -465,7 +441,7 @@ namespace HSDRawViewer.GUI.Plugins
                             foreach(var fi in f)
                             {
                                 tobj = new HSD_TOBJ();
-                                TOBJConverter.InjectBitmap(tobj, fi, texFormat, palFormat);
+                                TOBJConverter.InjectBitmap(fi, tobj, texFormat, palFormat);
                                 tobjs[ti++] = tobj;
                             }
                         }
@@ -484,7 +460,7 @@ namespace HSDRawViewer.GUI.Plugins
                     foreach(var fi in f)
                     {
                         tobj = new HSD_TOBJ();
-                        TOBJConverter.InjectBitmap(tobj, fi, texFormat, palFormat);
+                        TOBJConverter.InjectBitmap(fi, tobj, texFormat, palFormat);
 
                         /*if (tobj.ImageData.Width != tobjs[0].ImageData.Width || tobj.ImageData.Height != tobjs[0].ImageData.Height)
                         {
@@ -622,7 +598,7 @@ namespace HSDRawViewer.GUI.Plugins
             if ((textureList.SelectedIndices == null || textureList.SelectedIndices.Count == 0) && TOBJ == null)
                 return;
 
-            var f = Tools.FileIO.SaveFile("PNG (.png)|*.png");
+            var f = Tools.FileIO.SaveFile(ApplicationSettings.ImageFileFilter);
             if (f != null)
             {
                 var ind = textureList.SelectedIndices.Count > 0 ? textureList.SelectedIndices[0] : 0;
@@ -639,7 +615,7 @@ namespace HSDRawViewer.GUI.Plugins
         /// <param name="e"></param>
         private void exportAllToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            var f = Tools.FileIO.SaveFile("PNG (*.png)|*.png");
+            var f = Tools.FileIO.SaveFile(ApplicationSettings.ImageFileFilter);
             if (f != null)
             {
                 var i = 0;
@@ -660,7 +636,7 @@ namespace HSDRawViewer.GUI.Plugins
         {
             if (TEXG == null)
                 return;
-            var f = Tools.FileIO.SaveFile("PNG (*.png)|*.png");
+            var f = Tools.FileIO.SaveFile(ApplicationSettings.ImageFileFilter);
             if (f != null)
             {
                 var bitmap = new Bitmap(TEXG.Width * TEXG.ImageCount, TEXG.Height);
@@ -685,7 +661,7 @@ namespace HSDRawViewer.GUI.Plugins
         {
             if (TEXG == null)
                 return;
-            var f = Tools.FileIO.OpenFile("PNG (*.png)|*.png");
+            var f = Tools.FileIO.OpenFile(ApplicationSettings.ImageFileFilter);
             if (f != null)
             {
                 using (TextureImportDialog td = new TextureImportDialog())
@@ -700,7 +676,7 @@ namespace HSDRawViewer.GUI.Plugins
                         {
                             images[i] = new HSD_TOBJ();
                             var image = bmp.Clone(new Rectangle(bmp.Width / td.ImageCount * i, 0, bmp.Width / td.ImageCount, bmp.Height), System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-                            TOBJConverter.InjectBitmap(images[i], image, td.TextureFormat, td.PaletteFormat);
+                            TOBJConverter.InjectBitmap(image, images[i], td.TextureFormat, td.PaletteFormat);
                             image.Dispose();
                         }
                         bmp.Dispose();
@@ -717,7 +693,7 @@ namespace HSDRawViewer.GUI.Plugins
             if (TexAnim == null)
                 return;
 
-            var f = Tools.FileIO.SaveFile("PNG (*.png)|*.png");
+            var f = Tools.FileIO.SaveFile(ApplicationSettings.ImageFileFilter);
             if (f != null)
             {
                 for (int i = 0; i < TexAnim.ImageCount; i++)
@@ -747,7 +723,7 @@ namespace HSDRawViewer.GUI.Plugins
             if (TexAnim == null)
                 return;
 
-            var files = Tools.FileIO.OpenFiles("PNG (*.png)|*.png");
+            var files = Tools.FileIO.OpenFiles(ApplicationSettings.ImageFileFilter);
             if (files != null)
             {
                 using (TextureImportDialog td = new TextureImportDialog())
@@ -769,7 +745,7 @@ namespace HSDRawViewer.GUI.Plugins
                             else
                             {
                                 HSD_TOBJ temp = new HSD_TOBJ();
-                                TOBJConverter.InjectBitmap(temp, f, td.TextureFormat, td.PaletteFormat);
+                                TOBJConverter.InjectBitmap(f, temp, td.TextureFormat, td.PaletteFormat);
 
                                 HSD_TexBuffer buf = new HSD_TexBuffer();
                                 buf.Data = temp.ImageData;

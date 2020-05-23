@@ -110,6 +110,9 @@
     <Compile Include="ContextMenus\JOBJContextMenu.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="ContextMenus\JOBJDescContextMenu.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="ContextMenus\MapHeadContextMenu.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -136,7 +139,7 @@
     </Compile>
     <Compile Include="Converters\Animation\CHR0Converter.cs" />
     <Compile Include="Converters\Animation\ConvFOBJ.cs" />
-    <Compile Include="Converters\ConvSVG.cs" />
+    <Compile Include="Converters\SBM\ConvSVG.cs" />
     <Compile Include="Converters\DAEWriter.cs" />
     <Compile Include="Converters\JOBJTools.cs" />
     <Compile Include="Converters\Mex\EmblemConverter.cs" />
@@ -147,10 +150,12 @@
     <Compile Include="Converters\Mex\MexMenuAnimationGenerator.cs" />
     <Compile Include="Converters\ModelExporter.cs" />
     <Compile Include="Converters\ModelImporter.cs" />
-    <Compile Include="Converters\ModeltoCollData.cs" />
+    <Compile Include="Converters\SBM\ModeltoCollData.cs" />
     <Compile Include="Converters\Animation\MOTLoader.cs" />
     <Compile Include="Converters\OutlineGenerator.cs" />
     <Compile Include="Converters\PlayStruct.cs" />
+    <Compile Include="Converters\SBM\SSF.cs" />
+    <Compile Include="Converters\SBM\SSFConverter.cs" />
     <Compile Include="Converters\TOBJConverter.cs" />
     <Compile Include="DataNode.cs" />
     <Compile Include="Form1.cs">
@@ -404,6 +409,7 @@
     <None Include="Melee\subactions_item.yaml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="OpenTK.dll.config" />
     <None Include="Resources\ts_importfile.png" />
     <None Include="Resources\ts_exportfile.png" />
     <None Include="Resources\ts_clone.png" />
@@ -532,9 +538,6 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
-    <Content Include="OpenTK.dll.config">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -612,13 +615,13 @@
     </ReferenceCopyLocalPaths>
   </ItemDefinitionGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <Import Project="..\packages\DirectXTexNet.1.0.0-rc4\build\DirectXTexNet.targets" Condition="Exists('..\packages\DirectXTexNet.1.0.0-rc4\build\DirectXTexNet.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\packages\DirectXTexNet.1.0.0-rc4\build\DirectXTexNet.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\DirectXTexNet.1.0.0-rc4\build\DirectXTexNet.targets'))" />
     <Error Condition="!Exists('..\packages\AssimpNet.5.0.0-beta1\build\AssimpNet.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\AssimpNet.5.0.0-beta1\build\AssimpNet.targets'))" />
+    <Error Condition="!Exists('..\packages\DirectXTexNet.1.0.0-rc4\build\DirectXTexNet.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\DirectXTexNet.1.0.0-rc4\build\DirectXTexNet.targets'))" />
   </Target>
   <Import Project="..\packages\AssimpNet.5.0.0-beta1\build\AssimpNet.targets" Condition="Exists('..\packages\AssimpNet.5.0.0-beta1\build\AssimpNet.targets')" />
+  <Import Project="..\packages\DirectXTexNet.1.0.0-rc4\build\DirectXTexNet.targets" Condition="Exists('..\packages\DirectXTexNet.1.0.0-rc4\build\DirectXTexNet.targets')" />
 </Project>
