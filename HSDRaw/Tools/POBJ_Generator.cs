@@ -74,7 +74,7 @@ namespace HSDRaw.Tools
                     };
                     if (UseVertexAlpha &&
                         (names[i].Equals(GXAttribName.GX_VA_CLR0) || names[i].Equals(GXAttribName.GX_VA_CLR1)))
-                        attr.CompType = GXCompType.RGBA8;
+                            attr.CompType = GXCompType.RGBA8;
                     Console.WriteLine(names[i] + " " + attr.CompType);
                     nameToAttr.Add(names[i], attr);
                 }
@@ -242,7 +242,7 @@ namespace HSDRaw.Tools
                 var jobjweights = new List<HSD_Envelope>();
                 var pmidToNewID = new Dictionary<ushort, ushort>();
 
-                if (HasPositionNormalMatrix)
+                if (HasPositionNormalMatrix == true && weights.Count > 0)
                 {
                     foreach (var n in g._nodes)
                     {
