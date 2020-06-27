@@ -15,13 +15,13 @@ namespace HSDRaw.Melee.Pl
         
         public SBM_PlayerModelLookupTables ModelLookupTables { get => _s.GetReference<SBM_PlayerModelLookupTables>(0x08); set => _s.SetReference(0x08, value); }
 
-        public SBM_SubActionTable SubActionTable { get => _s.GetReference<SBM_SubActionTable>(0x0C); set => _s.SetReference(0x0C, value); }
+        public SBM_FighterCommandTable FighterCommandTable { get => _s.GetReference<SBM_FighterCommandTable>(0x0C); set => _s.SetReference(0x0C, value); }
 
-        public SBM_DynamicBehaviorIDs SubActionDynamicBehaviors { get => _s.GetReference<SBM_DynamicBehaviorIDs>(0x10); set => _s.SetReference(0x10, value); }
+        public SBM_DynamicBehaviorIDs CommandDynamicBehaviors { get => _s.GetReference<SBM_DynamicBehaviorIDs>(0x10); set => _s.SetReference(0x10, value); }
 
-        public SBM_SubActionTable WinSubAction { get => _s.GetReference<SBM_SubActionTable>(0x14); set => _s.SetReference(0x14, value); }
+        public SBM_FighterCommandTable WinCommandTable { get => _s.GetReference<SBM_FighterCommandTable>(0x14); set => _s.SetReference(0x14, value); }
 
-        public SBM_DynamicBehaviorIDs WinSubActionDynamicBehaviors { get => _s.GetReference<SBM_DynamicBehaviorIDs>(0x18); set => _s.SetReference(0x18, value); }
+        public SBM_DynamicBehaviorIDs WinCommandDynamicBehaviors { get => _s.GetReference<SBM_DynamicBehaviorIDs>(0x18); set => _s.SetReference(0x18, value); }
 
         public SBM_ModelPartTable ModelPartAnimations { get => _s.GetReference<SBM_ModelPartTable>(0x1C); set => _s.SetReference(0x1C, value); }
         
@@ -43,7 +43,7 @@ namespace HSDRaw.Melee.Pl
 
         public HSDAccessor Unknown0x40 { get => _s.GetReference<HSDAccessor>(0x40); set => _s.SetReference(0x40, value); }
 
-        public SBM_LedgeGrabBox LedgeGrabBox { get => _s.GetReference<SBM_LedgeGrabBox>(0x44); set => _s.SetReference(0x44, value); }
+        public SBM_EnvironmentCollision EnvironmentCollision { get => _s.GetReference<SBM_EnvironmentCollision>(0x44); set => _s.SetReference(0x44, value); }
 
         public SBM_ArticlePointer Articles { get => _s.GetReference<SBM_ArticlePointer>(0x48); set => _s.SetReference(0x48, value); }
 

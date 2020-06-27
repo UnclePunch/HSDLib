@@ -34,8 +34,8 @@ namespace HSDRawViewer.Converters
         [Category("Importing Options"), DisplayName("Flip Normals"), Description("Flips direction of normals, useful if model is all black with textures")]
         public bool InvertNormals { get; set; } = false;
 
-        //[Category("Importing Options"), DisplayName("Smooth Normals"), Description("Applies normal smoothing")]
-        //public bool SmoothNormals { get; set; } = false;
+        [Category("Importing Options"), DisplayName("Smooth Normals"), Description("Applies normal smoothing")]
+        public bool SmoothNormals { get; set; } = false;
         
 
         [Category("Importing Options"), DisplayName("Import Bone Names"), Description("Stores bone names in JOBJs")]
@@ -51,11 +51,11 @@ namespace HSDRawViewer.Converters
         [Category("Importing Options"), DisplayName("Force Merge Objects"), Description("Reduces number of DOBJs by forcing mesh groups to be grouped by material")]
         public ForceGroupModes ForceMergeObjects { get; set; } = ForceGroupModes.None;
 
-        [Category("Importing Options"), DisplayName("Scale"), Description("Amount to scale model by when importing")]
-        public float Scale { get; set; } = 1;
+        //[Category("Importing Options"), DisplayName("Scale"), Description("Amount to scale model by when importing")]
+        //public float Scale { get; set; } = 1;
 
-        [Category("Importing Options"), DisplayName("Set Joint Scale to 1"), Description("Sets all joint scaling to 1, 1, 1")]
-        public bool SetScaleToOne { get; set; } = false;
+        //[Category("Importing Options"), DisplayName("Set Joint Scale to 1"), Description("Sets all joint scaling to 1, 1, 1")]
+        //public bool SetScaleToOne { get; set; } = false;
 
         [Category("Importing Options"), DisplayName("Import Rigging"), Description("Import rigging from model file")]
         public bool ImportRigging { get; set; } = true;
@@ -65,18 +65,19 @@ namespace HSDRawViewer.Converters
         [Category("Material Options"), DisplayName("Import MOBJs"), Description("Imports .mobj files from file")]
         public bool ImportMOBJ { get; set; } = false;
 
-        [Category("Material Options"), DisplayName("Import Material Info"), Description("Imports the material info from model file. NOT recommended")]
-        public bool ImportMaterialInfo { get; set; } = false;
+        //[Category("Material Options"), DisplayName("Import Material Info"), Description("Imports the material info from model file. NOT recommended")]
+        //public bool ImportMaterialInfo { get; set; } = false;
 
         [Category("Material Options"), DisplayName("Import Normals"), Description("")]
         public bool ImportNormals { get; set; } = true;
-        
-        [Category("Material Options"), DisplayName("Import Vertex Colors"), Description("")]
-        public bool ImportVertexColor { get; set; } = false;
 
         [Category("Material Options"), DisplayName("Enable Diffuse"), Description("")]
         public bool EnableDiffuse { get; set; } = true;
 
+
+
+        [Category("Material Vertex Color Options"), DisplayName("Import Vertex Colors"), Description("")]
+        public bool ImportVertexColor { get; set; } = false;
 
         [Category("Material Vertex Color Options"), DisplayName("Import Vertex Alpha"), Description("Import the alpha color from vertex colors")]
         public bool ImportVertexAlpha { get; set; } = false;
@@ -96,11 +97,11 @@ namespace HSDRawViewer.Converters
         public GXTlutFmt PaletteFormat { get; set; } = GXTlutFmt.RGB565;
 
 
-        [Category("Misc"), DisplayName("Apply Fighter Transform (Melee Fighter Only)"), Description("Applies fighter transforms for use with Super Smash Bros. Melee")]
-        public bool ZeroOutRotationsAndApplyFighterTransforms { get; set; } = false;
+        //[Category("Misc"), DisplayName("Apply Fighter Transform (Melee Fighter Only)"), Description("Applies fighter transforms for use with Super Smash Bros. Melee")]
+        //public bool ZeroOutRotationsAndApplyFighterTransforms { get; set; } = false;
         
-        [Category("Misc"), DisplayName("Apply Naruto GNT Materials"), Description("Applys Material Style used in Naruto Clash of Ninja games")]
-        public bool ApplyNarutoMaterials { get; set; } = false;
+        //[Category("Misc"), DisplayName("Apply Naruto GNT Materials"), Description("Applys Material Style used in Naruto Clash of Ninja games")]
+        //public bool ApplyNarutoMaterials { get; set; } = false;
     }
 
 
@@ -133,6 +134,8 @@ namespace HSDRawViewer.Converters
         // keeps matches texture path to dobj for better grouping options
         public Dictionary<string, HSD_DOBJ> TextureToDOBJ = new Dictionary<string, HSD_DOBJ>();
 
+        public Vector3 SceneScale = Vector3.One;
+
         public bool HasXLU = false;
     }
 
@@ -146,6 +149,37 @@ namespace HSDRawViewer.Converters
         private string FilePath;
         private ModelImportSettings Settings;
         public HSD_JOBJ NewModel;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="toReplace"></param>
+        public static void ReplaceModelFromFile(HSD_JOBJ toReplace)
+        {
+            var f = Tools.FileIO.OpenFile("Supported Formats (*.dae, *.obj)|*.dae;*.obj;*.fbx;*.smd");
+
+            if (f != null)
+            {
+                var settings = new ModelImportSettings();
+                using (PropertyDialog d = new PropertyDialog("Model Import Options", settings))
+                {
+                    if (d.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                    {
+                        ModelImporter imp = new ModelImporter(f, settings);
+
+                        using (ProgressBarDisplay pb = new ProgressBarDisplay(imp))
+                        {
+                            pb.DoWork();
+                            pb.ShowDialog();
+                        }
+
+                        var newroot = imp.NewModel;
+
+                        toReplace._s.SetFromStruct(newroot._s);
+                    }
+                }
+            }
+        }
 
         public ModelImporter(string filePath, ModelImportSettings settings)
         {
@@ -164,11 +198,11 @@ namespace HSDRawViewer.Converters
                 Settings = new ModelImportSettings();
 
             ModelProcessCache cache = new ModelProcessCache();
-
             cache.POBJGen.UseTriangleStrips = Settings.UseStrips;
-
+            cache.POBJGen.UseVertexAlpha = Settings.ImportVertexAlpha;
             cache.FolderPath = Path.GetDirectoryName(FilePath);
 
+            // assimp process flags
             var processFlags = PostProcessPreset.TargetRealTimeMaximumQuality
                 | PostProcessSteps.Triangulate
                 | PostProcessSteps.LimitBoneWeights
@@ -180,41 +214,44 @@ namespace HSDRawViewer.Converters
             if (Settings.FlipUVs)
                 processFlags |= PostProcessSteps.FlipUVs;
 
-            //if (Settings.SmoothNormals)
-            //    processFlags |= PostProcessSteps.GenerateSmoothNormals;
-            
+            if (Settings.SmoothNormals)
+            {
+                processFlags |= PostProcessSteps.ForceGenerateNormals;
+                processFlags |= PostProcessSteps.GenerateSmoothNormals;
+            }
+
+            // import model
             ProgressStatus = "Importing Model with Assimp...";
             w.ReportProgress(0);
-            // import
             AssimpContext importer = new AssimpContext();
-            //if (Settings.SmoothNormals)
-            //    importer.SetConfig(new NormalSmoothingAngleConfig(80.0f));
+            if (Settings.SmoothNormals)
+                importer.SetConfig(new NormalSmoothingAngleConfig(80.0f));
             importer.SetConfig(new VertexBoneWeightLimitConfig(4));
             var importmodel = importer.ImportFile(FilePath, processFlags);
             
+
+            // process nodes
             ProgressStatus = "Processing Nodes...";
             w.ReportProgress(30);
-            // process nodes
             var rootNode = importmodel.RootNode;
-            var rootjobj = RecursiveProcess(cache, Settings, importmodel, importmodel.RootNode);
-            
+            var scenejobj = RecursiveProcess(cache, Settings, importmodel, importmodel.RootNode);
+
+            cache.SceneScale = new Vector3(scenejobj.SX, scenejobj.SY, scenejobj.SZ);
+
             // get root of skeleton
-            if(rootjobj.Child != null)
-                rootjobj = rootjobj.Child;
-            rootjobj.Flags = 0;
-
-            rootjobj.Flags |= JOBJ_FLAG.SKELETON_ROOT;
-
-            // no need for excess nodes
-            //if (filePath.ToLower().EndsWith(".obj"))
+            var rootjobj = GetSkeleton(scenejobj);
+            rootjobj.Flags = JOBJ_FLAG.SKELETON_ROOT;
             rootjobj.Next = null;
+            //RecalculateTransforms(cache, rootjobj, Matrix4.Identity);
+
 
             // Clear rotations
-            if (Settings.ZeroOutRotationsAndApplyFighterTransforms)
-            {
-                ProgressStatus = "Clearing Rotations...";
-                cache.jobjToNewTransform = JOBJTools.ApplyMeleeFighterTransforms(rootjobj);
-            }
+            //if (Settings.ZeroOutRotationsAndApplyFighterTransforms)
+            //{
+            //    ProgressStatus = "Clearing Rotations...";
+            //    cache.jobjToNewTransform = JOBJTools.ApplyMeleeFighterTransforms(rootjobj);
+            //}
+
 
             // process mesh
             ProgressStatus = "Processing Mesh...";
@@ -224,43 +261,34 @@ namespace HSDRawViewer.Converters
 
                 ProgressStatus = $"Processing Mesh {rootjobj.Dobj.List.Count} {cache.MeshNodes.Count + 1}...";
                 w.ReportProgress((int)(30 + 60 * (rootjobj.Dobj.List.Count / (float)cache.MeshNodes.Count)));
-                
-                //TODO:
-                //if (c.Flags.HasFlag(JOBJ_FLAG.OPA) || c.Flags.HasFlag(JOBJ_FLAG.ROOT_OPA))
-                //    jobj.Flags |= JOBJ_FLAG.ROOT_OPA;
-
-                if (!rootjobj.Flags.HasFlag(JOBJ_FLAG.LIGHTING) && Settings.EnableDiffuse)
-                {
-                    rootjobj.Flags |= JOBJ_FLAG.LIGHTING;
-                }
             }
 
-            // SKELETON 
+
+            // set flags
             if (cache.EnvelopedJOBJs.Count > 0)
                 rootjobj.Flags |= JOBJ_FLAG.ENVELOPE_MODEL;
-
-            // Transparency 
+            
             if (cache.HasXLU)
                 rootjobj.Flags |= JOBJ_FLAG.XLU;
-
-            // Opa
+            
             rootjobj.Flags |= JOBJ_FLAG.OPA;
 
+
+            // calculate inverse binds
             foreach (var jobj in cache.EnvelopedJOBJs)
             {
                 ProgressStatus = "Generating Inverse Transforms...";
-                jobj.Flags |= JOBJ_FLAG.SKELETON;
                 if (cache.jobjToNewTransform.ContainsKey(jobj))
                     jobj.InverseWorldTransform = Matrix4ToHSDMatrix(cache.jobjToNewTransform[jobj].Inverted());
                 else
                     jobj.InverseWorldTransform = Matrix4ToHSDMatrix(cache.jobjToWorldTransform[jobj].Inverted());
             }
 
-            if (Settings.ApplyNarutoMaterials)
+            /*if (Settings.ApplyNarutoMaterials)
             {
                 ProgressStatus = "Applying Naruto Materials...";
                 ApplyNarutoMaterials(rootjobj);
-            }
+            }*/
 
             // SAVE POBJ buffers
             ProgressStatus = "Generating and compressing vertex buffers...";
@@ -269,6 +297,10 @@ namespace HSDRawViewer.Converters
 
             // done
             NewModel = rootjobj;
+
+            // update flags
+            JOBJTools.UpdateJOBJFlags(NewModel);
+
             ProgressStatus = "Done!";
             w.ReportProgress(100);
         }
@@ -276,32 +308,25 @@ namespace HSDRawViewer.Converters
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="toReplace"></param>
-        public static void ReplaceModelFromFile(HSD_JOBJ toReplace)
+        /// <param name="sceneRoot"></param>
+        /// <returns></returns>
+        private static HSD_JOBJ GetSkeleton(HSD_JOBJ sceneRoot)
         {
-            var f = Tools.FileIO.OpenFile("Supported Formats (*.dae, *.obj)|*.dae;*.obj;*.fbx;*.smd");
+            if (sceneRoot.Child == null)
+                return sceneRoot;
 
-            if(f != null)
+            HSD_JOBJ skel = sceneRoot.Child;
+            var maxDepth = 0;
+            foreach(var v in sceneRoot.Children)
             {
-                var settings = new ModelImportSettings();
-                using (PropertyDialog d = new PropertyDialog("Model Import Options", settings))
+                if(v.BreathFirstList.Count > maxDepth)
                 {
-                    if(d.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-                    {
-                        ModelImporter imp = new ModelImporter(f, settings);
-
-                        using (ProgressBarDisplay pb = new ProgressBarDisplay(imp))
-                        {
-                            pb.DoWork();
-                            pb.ShowDialog();
-                        }
-
-                        var newroot = imp.NewModel;
-
-                        toReplace._s.SetFromStruct(newroot._s);
-                    }
+                    maxDepth = v.BreathFirstList.Count;
+                    skel = v;
                 }
             }
+
+            return skel;
         }
         
         /// <summary>
@@ -372,6 +397,28 @@ namespace HSDRawViewer.Converters
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="cache"></param>
+        /// <param name="settings"></param>
+        /// <param name="jobj"></param>
+        public static void RecalculateTransforms(ModelProcessCache cache, HSD_JOBJ jobj, Matrix4 parent)
+        {
+            Matrix4 Transform = Matrix4.CreateScale(jobj.SX, jobj.SY, jobj.SZ) *
+                Matrix4.CreateFromQuaternion(Math3D.FromEulerAngles(jobj.RZ, jobj.RY, jobj.RX)) *
+                Matrix4.CreateTranslation(jobj.TX, jobj.TY, jobj.TZ);
+            
+            Transform = Transform * parent;
+
+            cache.jobjToWorldTransform[jobj] = Transform;
+
+            foreach (var child in jobj.Children)
+            {
+                RecalculateTransforms(cache, child, parent);
+            }
+        }
+
+        /// <summary>
         /// Recursivly processing nodes and convert data into JOBJ
         /// </summary>
         /// <param name="scene"></param>
@@ -393,10 +440,10 @@ namespace HSDRawViewer.Converters
             var scale = transform.ExtractScale();
             var rotation = Math3D.ToEulerAngles(transform.ExtractRotation().Inverted());
 
-            if (settings.SetScaleToOne)
-                scale = Vector3.One;
+            //if (settings.SetScaleToOne)
+            //    scale = Vector3.One;
 
-            translation *= settings.Scale;
+            //translation *= settings.Scale;
             
             HSD_JOBJ jobj = new HSD_JOBJ();
 
@@ -439,10 +486,7 @@ namespace HSDRawViewer.Converters
         /// <returns></returns>
         private static float RoundFloat(float f)
         {
-            if (Math.Abs(f) < 0.000001)
-                return 0;
-            else
-                return f;
+            return (float)Math.Round(f, 4);
         }
 
         /// <summary>
@@ -514,6 +558,9 @@ namespace HSDRawViewer.Converters
 
                 if (node.Name.Contains("REFLECTIVE"))
                     hasReflection = true;
+
+                if (node.Name.Contains("BUMP"))
+                    hasBump = true;
 
                 if (dobj.Mobj.Textures != null)
                 {
@@ -662,7 +709,7 @@ namespace HSDRawViewer.Converters
 
                         GX_Vertex vertex = new GX_Vertex();
 
-                        var tkvert = new Vector3(mesh.Vertices[indicie].X, mesh.Vertices[indicie].Y, mesh.Vertices[indicie].Z) * settings.Scale;
+                        var tkvert = new Vector3(mesh.Vertices[indicie].X, mesh.Vertices[indicie].Y, mesh.Vertices[indicie].Z);//* settings.Scale;
                         var tknrm = new Vector3(mesh.Normals[indicie].X, mesh.Normals[indicie].Y, mesh.Normals[indicie].Z);
                         var tktan = Vector3.Zero;
                         var tkbitan = Vector3.Zero;
@@ -719,7 +766,9 @@ namespace HSDRawViewer.Converters
                             vertex.POS = GXTranslator.fromVector3(tkvert);
 
                         if (mesh.HasNormals)
-                            vertex.NRM = GXTranslator.fromVector3(tknrm);
+                        {
+                            vertex.NRM = GXTranslator.fromVector3(tknrm.Normalized());
+                        }
 
                         if (mesh.HasTangentBasis)
                         {
@@ -845,7 +894,7 @@ namespace HSDRawViewer.Converters
                 Mobj.RenderFlags |= RENDER_MODE.DIFFUSE;
 
             // Properties
-            if (settings.ImportMaterialInfo)
+            /*if (settings.ImportMaterialInfo)
             {
                 if (material.HasShininess)
                     Mobj.Material.Shininess = material.Shininess;
@@ -871,7 +920,7 @@ namespace HSDRawViewer.Converters
                     Mobj.Material.SPC_G = ColorFloatToByte(material.ColorSpecular.G);
                     Mobj.Material.SPC_B = ColorFloatToByte(material.ColorSpecular.B);
                 }
-            }
+            }*/
 
             // Textures
             if(settings.ImportTexture)
@@ -886,7 +935,7 @@ namespace HSDRawViewer.Converters
                     if (File.Exists(texturePath + ".png"))
                         texturePath = texturePath + ".png";
 
-                    var mobjPath = Path.Combine(cache.FolderPath, Path.GetFileNameWithoutExtension(texturePath)) + ".mobj";
+                    var mobjPath = Path.Combine(Path.GetDirectoryName(texturePath), Path.GetFileNameWithoutExtension(texturePath)) + ".mobj";
                     
                     if(settings.ImportMOBJ && File.Exists(mobjPath))
                     {

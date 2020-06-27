@@ -86,7 +86,7 @@
       <HintPath>..\packages\WeifenLuo.WinFormsUI.Docking.2.1.0\lib\net20\WeifenLuo.WinFormsUI.Docking.dll</HintPath>
     </Reference>
     <Reference Include="YamlDotNet, Version=8.0.0.0, Culture=neutral, PublicKeyToken=ec19458f3c15af5e, processorArchitecture=MSIL">
-      <HintPath>..\packages\YamlDotNet.8.1.0\lib\net45\YamlDotNet.dll</HintPath>
+      <HintPath>..\packages\YamlDotNet.8.1.2\lib\net45\YamlDotNet.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -141,6 +141,7 @@
     </Compile>
     <Compile Include="Converters\Animation\CHR0Converter.cs" />
     <Compile Include="Converters\Animation\ConvFOBJ.cs" />
+    <Compile Include="Converters\Animation\HSDK.cs" />
     <Compile Include="Converters\SBM\ConvSVG.cs" />
     <Compile Include="Converters\DAEWriter.cs" />
     <Compile Include="Converters\JOBJTools.cs" />
@@ -152,6 +153,7 @@
     <Compile Include="Converters\Mex\MexMenuAnimationGenerator.cs" />
     <Compile Include="Converters\ModelExporter.cs" />
     <Compile Include="Converters\ModelImporter.cs" />
+    <Compile Include="Converters\SBM\CSPMaker.cs" />
     <Compile Include="Converters\SBM\ModeltoCollData.cs" />
     <Compile Include="Converters\Animation\MOTLoader.cs" />
     <Compile Include="Converters\OutlineGenerator.cs" />
@@ -166,14 +168,20 @@
     <Compile Include="Form1.Designer.cs">
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
-    <Compile Include="GUI\ArrayMemberEditor.cs">
+    <Compile Include="GUI\Controls\ArrayMemberEditor.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="GUI\ArrayMemberEditor.Designer.cs">
+    <Compile Include="GUI\Controls\ArrayMemberEditor.Designer.cs">
       <DependentUpon>ArrayMemberEditor.cs</DependentUpon>
     </Compile>
-    <Compile Include="GUI\CustomTrackBar.cs">
+    <Compile Include="GUI\Controls\CustomTrackBar.cs">
       <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="GUI\Controls\GraphEditor.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="GUI\Controls\GraphEditor.Designer.cs">
+      <DependentUpon>GraphEditor.cs</DependentUpon>
     </Compile>
     <Compile Include="GUI\Extra\AJSplitDialog.cs">
       <SubType>Form</SubType>
@@ -192,6 +200,12 @@
     </Compile>
     <Compile Include="GUI\Extra\MOBJEditor.Designer.cs">
       <DependentUpon>MOBJEditor.cs</DependentUpon>
+    </Compile>
+    <Compile Include="GUI\Extra\PopoutGraphEditor.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="GUI\Extra\PopoutGraphEditor.Designer.cs">
+      <DependentUpon>PopoutGraphEditor.cs</DependentUpon>
     </Compile>
     <Compile Include="GUI\Extra\SEMEditor.cs">
       <SubType>Form</SubType>
@@ -217,10 +231,10 @@
     <Compile Include="GUI\HSDTypeDialog.Designer.cs">
       <DependentUpon>HSDTypeDialog.cs</DependentUpon>
     </Compile>
-    <Compile Include="GUI\KeyEditor.cs">
+    <Compile Include="GUI\Controls\KeyEditor.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="GUI\KeyEditor.Designer.cs">
+    <Compile Include="GUI\Controls\KeyEditor.Designer.cs">
       <DependentUpon>KeyEditor.cs</DependentUpon>
     </Compile>
     <Compile Include="GUI\MEX\Controls\MEXMenuCSSControl.cs">
@@ -372,22 +386,22 @@
     <Compile Include="GUI\TextureImportDialog.Designer.cs">
       <DependentUpon>TextureImportDialog.cs</DependentUpon>
     </Compile>
-    <Compile Include="GUI\ViewportControl.cs">
+    <Compile Include="GUI\Controls\ViewportControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="GUI\ViewportControl.Designer.cs">
+    <Compile Include="GUI\Controls\ViewportControl.Designer.cs">
       <DependentUpon>ViewportControl.cs</DependentUpon>
     </Compile>
     <Compile Include="PluginManager.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RawHSD.cs" />
     <Compile Include="Rendering\Animation\AnimManager.cs" />
     <Compile Include="Rendering\Animation\AnimNode.cs" />
     <Compile Include="Rendering\Animation\MotAnimManager.cs" />
     <Compile Include="Rendering\Camera.cs" />
     <Compile Include="Rendering\Models\DobjManager.cs" />
     <Compile Include="Rendering\Animation\MatAnimManager.cs" />
+    <Compile Include="Rendering\Renderers\GraphRenderer.cs" />
     <Compile Include="Rendering\Renderers\HurtboxRenderer.cs" />
     <Compile Include="Rendering\Renderers\TextRenderer.cs" />
     <Compile Include="Rendering\Shapes\DrawShape.cs" />
@@ -412,6 +426,9 @@
     <Compile Include="Sound\DSP.cs" />
     <Compile Include="Sound\DSPPlayer.cs" />
     <Compile Include="Tools\FileIO.cs" />
+    <Compile Include="Tools\FlagEnumEditor.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Tools\GUITools.cs" />
     <Compile Include="Tools\ImageTools.cs" />
     <Compile Include="Tools\ObjectExtension.cs" />
@@ -421,10 +438,10 @@
     <Compile Include="Sound\SSM.cs" />
     <Compile Include="Tools\SubactionManager.cs" />
     <None Include="Resources\melee_font.png" />
-    <None Include="Melee\subactions_fighter.yaml">
+    <None Include="Melee\command_fighter.yml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Melee\subactions_item.yaml">
+    <None Include="Melee\command_item.yml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="OpenTK.dll.config" />
@@ -445,10 +462,10 @@
     <None Include="Resources\ts_add.png" />
     <None Include="Resources\ts_up.png" />
     <None Include="Resources\ts_down.png" />
-    <None Include="Melee\subactions_control.yaml">
+    <None Include="Melee\command_controls.yml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Melee\subactions_custom.yaml">
+    <None Include="Melee\command_custom.yml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Resources\ts_stop.png" />
@@ -456,8 +473,11 @@
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="GUI\ArrayMemberEditor.resx">
+    <EmbeddedResource Include="GUI\Controls\ArrayMemberEditor.resx">
       <DependentUpon>ArrayMemberEditor.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="GUI\Controls\GraphEditor.resx">
+      <DependentUpon>GraphEditor.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="GUI\Extra\AJSplitDialog.resx">
       <DependentUpon>AJSplitDialog.cs</DependentUpon>
@@ -467,6 +487,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="GUI\Extra\MOBJEditor.resx">
       <DependentUpon>MOBJEditor.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="GUI\Extra\PopoutGraphEditor.resx">
+      <DependentUpon>PopoutGraphEditor.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="GUI\Extra\SEMEditor.resx">
       <DependentUpon>SEMEditor.cs</DependentUpon>
@@ -480,7 +503,7 @@
     <EmbeddedResource Include="GUI\HSDTypeDialog.resx">
       <DependentUpon>HSDTypeDialog.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="GUI\KeyEditor.resx">
+    <EmbeddedResource Include="GUI\Controls\KeyEditor.resx">
       <DependentUpon>KeyEditor.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="GUI\MEX\Controls\MEXEffectControl.resx">
@@ -549,7 +572,7 @@
     <EmbeddedResource Include="GUI\TextureImportDialog.resx">
       <DependentUpon>TextureImportDialog.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="GUI\ViewportControl.resx">
+    <EmbeddedResource Include="GUI\Controls\ViewportControl.resx">
       <DependentUpon>ViewportControl.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
