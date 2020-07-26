@@ -3,6 +3,8 @@
 in float PNMTXIDX;
 in vec3 GX_VA_POS;
 in vec3 GX_VA_NRM;
+in vec3 GX_VA_TAN;
+in vec3 GX_VA_BTAN;
 in vec2 GX_VA_TEX0;
 in vec2 GX_VA_TEX1;
 in vec2 GX_VA_TEX2;
@@ -11,6 +13,8 @@ in vec4 GX_VA_CLR0;
 
 out vec3 vertPosition;
 out vec3 normal;
+out vec3 tan;
+out vec3 bitan;
 out float spec;
 out vec2 texcoord0;
 out vec2 texcoord1;
@@ -26,7 +30,6 @@ uniform int isSkeleton;
 uniform int enableParentTransform;
 uniform mat4 singleBind;
 
-uniform vec3 cameraPos;
 uniform int hasEnvelopes;
 
 uniform BoneTransforms
@@ -39,10 +42,26 @@ uniform mat4 binds[200];
 uniform vec4 envelopeIndex[10];
 uniform vec4 weights[10];
 
+
+struct Light
+{
+	int useCamera;
+	vec3 position;
+	vec4 ambient;
+	vec4 diffuse;
+	float ambientPower;
+	float diffusePower;
+};
+
+uniform vec3 cameraPos;
+uniform Light light;
+
 void main()
 {
 	vec4 pos = vec4(GX_VA_POS, 1);
 	
+	tan = normalize(GX_VA_TAN);
+	bitan = normalize(GX_VA_BTAN);
 	normal = GX_VA_NRM;
 
 	vbones = vec4(0, 0, 0, 0);
@@ -85,6 +104,7 @@ void main()
 	}
 	
 	vertPosition = pos.xyz;
+	normal = normalize(normal);
 
 	texcoord0 = GX_VA_TEX0;
 	texcoord1 = GX_VA_TEX1;
@@ -93,7 +113,13 @@ void main()
 
 	vertexColor = GX_VA_CLR0;
 	
-	vec3 V = normalize(vertPosition - cameraPos);
+	vec3 V = vertPosition - cameraPos;
+
+	if(light.useCamera == 0)
+		V = light.position;
+
+	V = normalize(V);
+
     spec = clamp(dot(normal, V), 0, 1);
 
 	gl_Position = mvp * vec4(pos.xyz, 1);

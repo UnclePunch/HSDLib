@@ -5,6 +5,8 @@ using OpenTK;
 using OpenTK.Graphics.OpenGL;
 using HSDRaw.Common.Animation;
 using HSDRawViewer.Converters;
+using System.Drawing;
+using System.ComponentModel;
 
 namespace HSDRawViewer.Rendering
 {
@@ -12,6 +14,8 @@ namespace HSDRawViewer.Rendering
     {
         Default,
         Normals,
+        Tangents, 
+        BiNormal,
         VertexColor,
         UV0,
         UV1,
@@ -29,22 +33,63 @@ namespace HSDRawViewer.Rendering
         SpecularPass,
         BoneWeight,
     }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public class JOBJManagerSettings
+    {
+        [Category("1. Display"), DisplayName("Show Bones"), Description("")]
+        public bool RenderBones { get; set; } = true;
+
+        [Category("1. Display"), DisplayName("Show Objects"), Description("")]
+        public bool RenderObjects { get; set; } = true;
+
+        [Category("1. Display"), DisplayName("Show Bone Orientation"), Description("")]
+        public bool RenderOrientation { get; set; } = false;
+
+
+        //public bool RenderMaterials { get; set; } = true;
+
+
+        [Category("4. Enhancements"), DisplayName("Use Per Pixel Lighting"), Description("Calculates lighting per pixel for a smoother look. Set to false for gamecube style.")]
+        public bool UsePerPixelLighting { get; set; } = true;
+
+
+        [Category("2. Lighting Settings"), DisplayName("Use Camera Light"), Description("When true makes the light source emit from the camera's location")]
+        public bool UseCameraLight { get; set; } = true;
+
+        [Category("2. Lighting Settings"), DisplayName("Light X"), Description("X position of light in world when camera light is disabled")]
+        public float LightX { get; set; } = 0;
+
+        [Category("2. Lighting Settings"), DisplayName("Light Y"), Description("Y position of light in world when camera light is disabled")]
+        public float LightY { get; set; } = 10;
+
+        [Category("2. Lighting Settings"), DisplayName("Light Z"), Description("Z position of light in world when camera light is disabled")]
+        public float LightZ { get; set; } = 50;
+
+
+        [Category("3. Lighting Color"), DisplayName("Ambient Intensity"), Description("The intensity of the ambient lighting")]
+        public float AmbientPower { get; set; } = 0.5f;
+
+        [Category("3. Lighting Color"), DisplayName("Ambient Color"), Description("The color of the ambient light")]
+        public Color AmbientColor { get; set; } = Color.White;
+
+        [Category("3. Lighting Color"), DisplayName("Diffuse Intensity"), Description("The intensity of the diffuse lighting")]
+        public float DiffusePower { get; set; } = 1;
+
+        [Category("3. Lighting Color"), DisplayName("Diffuse Color"), Description("The color of the diffuse light")]
+        public Color DiffuseColor { get; set; } = Color.White;
+    }
+
     /// <summary>
     /// 
     /// </summary>
     public class JOBJManager
     {
-        #region Settings
-
-        public bool RenderBones { get; set; } = true;
-
-        public bool RenderObjects { get; set; } = true;
-
-        public bool RenderMaterials { get; set; } = true;
+        public JOBJManagerSettings settings = new JOBJManagerSettings();
 
         public HSD_JOBJ SelectetedJOBJ = null;
-
-        #endregion
 
         public float Frame { get; set; }
 
@@ -294,7 +339,7 @@ namespace HSDRawViewer.Rendering
             }
 
             // Render DOBJS
-            if (RenderObjects)
+            if (settings.RenderObjects)
             {
                 HSD_JOBJ parent = null;
                 List<Tuple<HSD_DOBJ, HSD_JOBJ, int, int>> XLU = new List<Tuple<HSD_DOBJ, HSD_JOBJ, int, int>>();
@@ -345,10 +390,15 @@ namespace HSDRawViewer.Rendering
             GL.Disable(EnableCap.Texture2D);
             GL.Disable(EnableCap.DepthTest);
 
-            if (RenderBones)
+            float mag = 0;
+
+            if(settings.RenderOrientation)
+                mag = Vector3.TransformPosition(new Vector3(1, 0, 0), camera.MvpMatrix.Inverted()).Length / 30;
+
+            if (settings.RenderBones)
                 foreach (var b in jobjToCache)
                 {
-                    RenderBone(b.Value, b.Key.Equals(SelectetedJOBJ));
+                    RenderBone(mag, b.Value, b.Key.Equals(SelectetedJOBJ));
                 }
 
             GL.PopAttrib();
@@ -367,15 +417,15 @@ namespace HSDRawViewer.Rendering
         /// </summary>
         /// <param name="transform"></param>
         /// <param name="parentTransform"></param>
-        private void RenderBone(JOBJCache jobj, bool selected)
+        private void RenderBone(float mag, JOBJCache jobj, bool selected)
         {
             Matrix4 transform = jobj.WorldTransform;
-            var bonePosition = Vector3.TransformPosition(Vector3.Zero, transform);
 
             if (jobj.Parent != null)
             {
                 Matrix4 parentTransform = jobj.Parent.WorldTransform;
 
+                var bonePosition = Vector3.TransformPosition(Vector3.Zero, transform);
                 var parentPosition = Vector3.TransformPosition(Vector3.Zero, parentTransform);
 
                 GL.LineWidth(1f);
@@ -397,9 +447,32 @@ namespace HSDRawViewer.Rendering
                 GL.Color3(1f, 0f, 0f);
                 GL.PointSize(5f);
             }
+
+            GL.PushMatrix();
+            GL.MultMatrix(ref transform);
+
             GL.Begin(PrimitiveType.Points);
-            GL.Vertex3(bonePosition);
+            GL.Vertex3(0, 0, 0);
             GL.End();
+
+            if (settings.RenderOrientation)
+            {
+                GL.LineWidth(2.5f);
+
+                GL.Begin(PrimitiveType.Lines);
+                GL.Color3(1f, 0f, 0f);
+                GL.Vertex3(0, 0, 0);
+                GL.Vertex3(mag, 0, 0);
+                GL.Color3(0f, 1f, 0f);
+                GL.Vertex3(0, 0, 0);
+                GL.Vertex3(0, mag, 0);
+                GL.Color3(0f, 0f, 1f);
+                GL.Vertex3(0, 0, 0);
+                GL.Vertex3(0, 0, mag);
+                GL.End();
+            }
+
+            GL.PopMatrix();
         }
 
         /// <summary>

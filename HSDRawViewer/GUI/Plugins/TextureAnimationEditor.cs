@@ -5,9 +5,7 @@ using HSDRaw.Tools;
 using HSDRawViewer.Converters;
 using HSDRawViewer.Rendering;
 using System;
-using System.Linq;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Drawing;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -151,7 +149,7 @@ namespace HSDRawViewer.GUI.Plugins
             BitmapList.ColorDepth = ColorDepth.Depth32Bit;
             textureList.LargeImageList = BitmapList;
 
-            toolStripComboBox1.SelectedIndex = 4;
+            //toolStripComboBox1.SelectedIndex = 4;
             
             FormClosing += (sender, args) =>
             {
@@ -168,7 +166,7 @@ namespace HSDRawViewer.GUI.Plugins
         {
             var id = TextureManager.TextureCount;
             TextureManager.Add(data, width, height);
-            var image = TOBJConverter.RgbaToImage(data, width, height);
+            var image = Tools.BitmapTools.RgbaToImage(data, width, height);
             BitmapList.Images.Add(image);
             textureList.Items.Add(new ListViewItem() { ImageIndex = id, Text = "Image_" + id });
         }
@@ -194,8 +192,13 @@ namespace HSDRawViewer.GUI.Plugins
 
             var tobjs = GetTOBJs();
 
+            if (tobjs == null)
+                return;
+
             foreach(var tobj in tobjs)
             {
+                if (tobj == null)
+                    continue;
                 LoadTexture(tobj.GetDecodedImageData(), tobj.ImageData.Width, tobj.ImageData.Height);
             }
         }
@@ -613,7 +616,7 @@ namespace HSDRawViewer.GUI.Plugins
                 var i = 0;
                 foreach(var tobj in GetTOBJs())
                 {
-                    var frame = TOBJConverter.RgbaToImage(tobj.GetDecodedImageData(), tobj.ImageData.Width, tobj.ImageData.Height);
+                    var frame = Tools.BitmapTools.RgbaToImage(tobj.GetDecodedImageData(), tobj.ImageData.Width, tobj.ImageData.Height);
                     frame.Save(Path.GetDirectoryName(f) + "\\" + Path.GetFileNameWithoutExtension(f) + "_" + i.ToString() + Path.GetExtension(f));
                     frame.Dispose();
                     i++;
@@ -637,7 +640,7 @@ namespace HSDRawViewer.GUI.Plugins
                     var imageData = TEXG.GetRGBAImageData();
                     for (int i = 0; i < TEXG.ImageCount; i++)
                     {
-                        var frame = TOBJConverter.RgbaToImage(imageData[i], TEXG.Width, TEXG.Height);
+                        var frame = Tools.BitmapTools.RgbaToImage(imageData[i], TEXG.Width, TEXG.Height);
                         g.DrawImage(frame, TEXG.Width * i, 0);
                         frame.Dispose();
                     }
@@ -703,7 +706,7 @@ namespace HSDRawViewer.GUI.Plugins
                     if (pal != null)
                         tobj.TlutData = pal.Data;
 
-                    var frame = TOBJConverter.RgbaToImage(tobj.GetDecodedImageData(), v.Data.Width, v.Data.Height);
+                    var frame = Tools.BitmapTools.RgbaToImage(tobj.GetDecodedImageData(), v.Data.Width, v.Data.Height);
                     frame.Save(Path.GetDirectoryName(f) + "\\" + Path.GetFileNameWithoutExtension(f) + "_" + i.ToString() + Path.GetExtension(f));
                     frame.Dispose();
                 }

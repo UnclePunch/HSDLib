@@ -108,9 +108,7 @@ namespace HSDRawViewer.GUI.MEX.Controls
         /// <param name="data"></param>
         public void SaveData(MEX_Data data)
         {
-            for (int i = 0; i < StageEntries.Length; i++)
-                StageEntries[i].InternalID = i;
-
+            UpdateInternalIDs();
             data.StageFunctions.Array = StageEntries.Select(e => e.Stage).ToArray();
             data.StageData.ReverbTable.Array = StageEntries.Select(e => e.Reverb).ToArray();
             data.StageData.CollisionTable.Array = StageEntries.Select(e => e.Collision).ToArray();
@@ -124,23 +122,22 @@ namespace HSDRawViewer.GUI.MEX.Controls
         /// <summary>
         /// 
         /// </summary>
+        private void UpdateInternalIDs()
+        {
+            for (int i = 0; i < StageEntries.Length; i++)
+                StageEntries[i].InternalID = i;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
         public void ResetDataBindings()
         {
 
         }
         
         #region Events
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void saveStageButton_Click(object sender, EventArgs e)
-        {
-            SaveData(MexData);
-        }
-
+        
         /// <summary>
         /// 
         /// </summary>
@@ -148,8 +145,9 @@ namespace HSDRawViewer.GUI.MEX.Controls
         /// <param name="e"></param>
         private void stageEditor_ArrayUpdated(object sender, EventArgs e)
         {
+            UpdateInternalIDs();
             MEXConverter.stageIDValues.Clear();
-            MEXConverter.stageIDValues.AddRange(StageEntries.Select(s => s.InternalID + " - " + s.FileName));
+            MEXConverter.stageIDValues.AddRange(StageEntries.Select((s, i) => i + " - " + s.FileName));
         }
 
         /// <summary>
@@ -162,6 +160,12 @@ namespace HSDRawViewer.GUI.MEX.Controls
             if (stageEditor.SelectedObject is MEXStageEntry entry)
             {
                 var functions = entry.Functions;
+
+                if (functions == null)
+                {
+                    MessageBox.Show("This MxDt file does not contains map gobj functions", "Nothing to copy", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                    return;
+                }
 
                 StringBuilder table = new StringBuilder();
                 int index = 0;

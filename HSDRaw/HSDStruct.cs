@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -16,6 +15,10 @@ namespace HSDRaw
         private byte[] _data = new byte[0];
 
         public bool IsTextureBuffer = false;
+
+        public bool CanBeBuffer = true;
+
+        public bool Align = true;
 
         public Dictionary<int, HSDStruct> References { get => _references; }
         private Dictionary<int, HSDStruct> _references = new Dictionary<int, HSDStruct>();
@@ -617,6 +620,14 @@ namespace HSDRaw
         public void Resize(int size)
         {
             Array.Resize(ref _data, size);
+
+            List<int> remove = new List<int>();
+            foreach (var v in References)
+                if (v.Key >= size)
+                    remove.Add(v.Key);
+
+            foreach (var rem in remove)
+                References.Remove(rem);
         }
 
         private byte[] EndianFix(byte[] b)

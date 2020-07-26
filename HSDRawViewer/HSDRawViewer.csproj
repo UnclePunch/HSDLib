@@ -24,6 +24,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -33,14 +34,12 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationIcon>dogg.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="AssimpNet, Version=5.0.0.0, Culture=neutral, PublicKeyToken=0d51b391f59f42a6, processorArchitecture=MSIL">
-      <HintPath>..\packages\AssimpNet.5.0.0-beta1\lib\net40\AssimpNet.dll</HintPath>
-    </Reference>
     <Reference Include="Be.Windows.Forms.HexBox, Version=1.6.1.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Be.Windows.Forms.HexBox.1.6.1\lib\net40\Be.Windows.Forms.HexBox.dll</HintPath>
     </Reference>
@@ -49,6 +48,10 @@
     </Reference>
     <Reference Include="DirectXTexNet, Version=1.0.0.4, Culture=neutral, PublicKeyToken=67e4f5ed452a4f5d, processorArchitecture=MSIL">
       <HintPath>..\packages\DirectXTexNet.1.0.0-rc4\lib\netstandard2.0\DirectXTexNet.dll</HintPath>
+    </Reference>
+    <Reference Include="IONET, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>lib\IONET.dll</HintPath>
     </Reference>
     <Reference Include="Ionic.Zip.Reduced, Version=1.9.1.8, Culture=neutral, PublicKeyToken=edbe51ad942a3f5c, processorArchitecture=MSIL">
       <HintPath>..\packages\DotNetZip.Reduced.1.9.1.8\lib\net20\Ionic.Zip.Reduced.dll</HintPath>
@@ -68,6 +71,10 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Design" />
     <Reference Include="System.IO.Compression.FileSystem" />
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -84,7 +91,7 @@
       <HintPath>..\packages\WeifenLuo.WinFormsUI.Docking.2.1.0\lib\net20\WeifenLuo.WinFormsUI.Docking.dll</HintPath>
     </Reference>
     <Reference Include="YamlDotNet, Version=8.0.0.0, Culture=neutral, PublicKeyToken=ec19458f3c15af5e, processorArchitecture=MSIL">
-      <HintPath>..\packages\YamlDotNet.8.1.0\lib\net45\YamlDotNet.dll</HintPath>
+      <HintPath>..\packages\YamlDotNet.8.1.2\lib\net45\YamlDotNet.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -119,6 +126,9 @@
     <Compile Include="ContextMenus\MatAnimContextMenu.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="ContextMenus\JointAnimContextMenu.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="ContextMenus\MatAnimJointContextMenu.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -139,6 +149,7 @@
     </Compile>
     <Compile Include="Converters\Animation\CHR0Converter.cs" />
     <Compile Include="Converters\Animation\ConvFOBJ.cs" />
+    <Compile Include="Converters\Animation\HSDK.cs" />
     <Compile Include="Converters\SBM\ConvSVG.cs" />
     <Compile Include="Converters\DAEWriter.cs" />
     <Compile Include="Converters\JOBJTools.cs" />
@@ -150,6 +161,7 @@
     <Compile Include="Converters\Mex\MexMenuAnimationGenerator.cs" />
     <Compile Include="Converters\ModelExporter.cs" />
     <Compile Include="Converters\ModelImporter.cs" />
+    <Compile Include="Converters\SBM\CSPMaker.cs" />
     <Compile Include="Converters\SBM\ModeltoCollData.cs" />
     <Compile Include="Converters\Animation\MOTLoader.cs" />
     <Compile Include="Converters\OutlineGenerator.cs" />
@@ -164,14 +176,20 @@
     <Compile Include="Form1.Designer.cs">
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
-    <Compile Include="GUI\ArrayMemberEditor.cs">
+    <Compile Include="GUI\Controls\ArrayMemberEditor.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="GUI\ArrayMemberEditor.Designer.cs">
+    <Compile Include="GUI\Controls\ArrayMemberEditor.Designer.cs">
       <DependentUpon>ArrayMemberEditor.cs</DependentUpon>
     </Compile>
-    <Compile Include="GUI\CustomTrackBar.cs">
+    <Compile Include="GUI\Controls\CustomTrackBar.cs">
       <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="GUI\Controls\GraphEditor.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="GUI\Controls\GraphEditor.Designer.cs">
+      <DependentUpon>GraphEditor.cs</DependentUpon>
     </Compile>
     <Compile Include="GUI\Extra\AJSplitDialog.cs">
       <SubType>Form</SubType>
@@ -191,11 +209,35 @@
     <Compile Include="GUI\Extra\MOBJEditor.Designer.cs">
       <DependentUpon>MOBJEditor.cs</DependentUpon>
     </Compile>
-    <Compile Include="GUI\Extra\SEMEditor.cs">
+    <Compile Include="GUI\Extra\PopoutGraphEditor.cs">
       <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="GUI\Extra\PopoutGraphEditor.Designer.cs">
+      <DependentUpon>PopoutGraphEditor.cs</DependentUpon>
+    </Compile>
+    <Compile Include="GUI\Extra\SEMEditor.cs">
+      <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="GUI\Extra\SEMEditor.Designer.cs">
       <DependentUpon>SEMEditor.cs</DependentUpon>
+    </Compile>
+    <Compile Include="GUI\Extra\SEMEditorTool.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="GUI\Extra\SEMEditorTool.Designer.cs">
+      <DependentUpon>SEMEditorTool.cs</DependentUpon>
+    </Compile>
+    <Compile Include="GUI\Extra\SoundBankEditor.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="GUI\Extra\SoundBankEditor.Designer.cs">
+      <DependentUpon>SoundBankEditor.cs</DependentUpon>
+    </Compile>
+    <Compile Include="GUI\Extra\SoundScriptEditor.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="GUI\Extra\SoundScriptEditor.Designer.cs">
+      <DependentUpon>SoundScriptEditor.cs</DependentUpon>
     </Compile>
     <Compile Include="GUI\Extra\SSMTool.cs">
       <SubType>Form</SubType>
@@ -203,16 +245,22 @@
     <Compile Include="GUI\Extra\SSMTool.Designer.cs">
       <DependentUpon>SSMTool.cs</DependentUpon>
     </Compile>
+    <Compile Include="GUI\HelpBox.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="GUI\HelpBox.Designer.cs">
+      <DependentUpon>HelpBox.cs</DependentUpon>
+    </Compile>
     <Compile Include="GUI\HSDTypeDialog.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="GUI\HSDTypeDialog.Designer.cs">
       <DependentUpon>HSDTypeDialog.cs</DependentUpon>
     </Compile>
-    <Compile Include="GUI\KeyEditor.cs">
+    <Compile Include="GUI\Controls\KeyEditor.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="GUI\KeyEditor.Designer.cs">
+    <Compile Include="GUI\Controls\KeyEditor.Designer.cs">
       <DependentUpon>KeyEditor.cs</DependentUpon>
     </Compile>
     <Compile Include="GUI\MEX\Controls\MEXMenuCSSControl.cs">
@@ -257,6 +305,12 @@
     <Compile Include="GUI\MEX\Controls\MEXMusicControl.Designer.cs">
       <DependentUpon>MEXMusicControl.cs</DependentUpon>
     </Compile>
+    <Compile Include="GUI\MEX\Controls\MEXSemControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="GUI\MEX\Controls\MEXSemControl.Designer.cs">
+      <DependentUpon>MEXSemControl.cs</DependentUpon>
+    </Compile>
     <Compile Include="GUI\MEX\Controls\MEXStageControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -266,11 +320,30 @@
     <Compile Include="GUI\MEX\IMEXControl.cs" />
     <Compile Include="GUI\MEX\Tools\StagePackage.cs" />
     <Compile Include="GUI\MEX\Tools\FighterPackage.cs" />
+    <Compile Include="GUI\Plugins\AirRide\AirRideGrCollisionManager.cs" />
+    <Compile Include="GUI\Plugins\AirRide\AirRideGrDataEditor.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="GUI\Plugins\AirRide\AirRideGrDataEditor.Designer.cs">
+      <DependentUpon>AirRideGrDataEditor.cs</DependentUpon>
+    </Compile>
+    <Compile Include="GUI\Plugins\AirRide\AriRideGrModelEditor.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="GUI\Plugins\AirRide\AriRideGrModelEditor.Designer.cs">
+      <DependentUpon>AriRideGrModelEditor.cs</DependentUpon>
+    </Compile>
     <Compile Include="GUI\Plugins\AOBJEditor.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="GUI\Plugins\AOBJEditor.Designer.cs">
       <DependentUpon>AOBJEditor.cs</DependentUpon>
+    </Compile>
+    <Compile Include="GUI\Plugins\JobjEditorDock.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="GUI\Plugins\JobjEditorDock.Designer.cs">
+      <DependentUpon>JobjEditorDock.cs</DependentUpon>
     </Compile>
     <Compile Include="GUI\Plugins\Melee\CollDataEditor.cs">
       <SubType>Form</SubType>
@@ -285,11 +358,11 @@
     <Compile Include="GUI\Plugins\GeneralPointEditor.Designer.cs">
       <DependentUpon>GeneralPointEditor.cs</DependentUpon>
     </Compile>
-    <Compile Include="GUI\Plugins\JOBJEditor.cs">
-      <SubType>Form</SubType>
+    <Compile Include="GUI\Controls\JobjEditor.cs">
+      <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="GUI\Plugins\JOBJEditor.Designer.cs">
-      <DependentUpon>JOBJEditor.cs</DependentUpon>
+    <Compile Include="GUI\Controls\JobjEditor.Designer.cs">
+      <DependentUpon>JobjEditor.cs</DependentUpon>
     </Compile>
     <Compile Include="GUI\Plugins\Melee\CollDataItems.cs" />
     <Compile Include="GUI\Plugins\Melee\DummyThrowModel.cs" />
@@ -298,6 +371,12 @@
     </Compile>
     <Compile Include="GUI\Plugins\Melee\HurtBoxEditor.Designer.cs">
       <DependentUpon>HurtBoxEditor.cs</DependentUpon>
+    </Compile>
+    <Compile Include="GUI\Plugins\Melee\SISMenuDataEditor.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="GUI\Plugins\Melee\SISMenuDataEditor.Designer.cs">
+      <DependentUpon>SISMenuDataEditor.cs</DependentUpon>
     </Compile>
     <Compile Include="GUI\Plugins\Melee\SubactionProcessor.cs" />
     <Compile Include="GUI\MEX\Entries\MEXCSSIconEntry.cs" />
@@ -358,22 +437,22 @@
     <Compile Include="GUI\TextureImportDialog.Designer.cs">
       <DependentUpon>TextureImportDialog.cs</DependentUpon>
     </Compile>
-    <Compile Include="GUI\ViewportControl.cs">
+    <Compile Include="GUI\Controls\ViewportControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="GUI\ViewportControl.Designer.cs">
+    <Compile Include="GUI\Controls\ViewportControl.Designer.cs">
       <DependentUpon>ViewportControl.cs</DependentUpon>
     </Compile>
     <Compile Include="PluginManager.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RawHSD.cs" />
     <Compile Include="Rendering\Animation\AnimManager.cs" />
     <Compile Include="Rendering\Animation\AnimNode.cs" />
     <Compile Include="Rendering\Animation\MotAnimManager.cs" />
     <Compile Include="Rendering\Camera.cs" />
     <Compile Include="Rendering\Models\DobjManager.cs" />
     <Compile Include="Rendering\Animation\MatAnimManager.cs" />
+    <Compile Include="Rendering\Renderers\GraphRenderer.cs" />
     <Compile Include="Rendering\Renderers\HurtboxRenderer.cs" />
     <Compile Include="Rendering\Renderers\TextRenderer.cs" />
     <Compile Include="Rendering\Shapes\DrawShape.cs" />
@@ -394,21 +473,28 @@
     </Compile>
     <Compile Include="Sound\HPS.cs" />
     <Compile Include="Sound\SEM.cs" />
+    <Compile Include="Sound\SEMEntry.cs" />
     <Compile Include="TestFunctions.cs" />
     <Compile Include="Sound\DSP.cs" />
     <Compile Include="Sound\DSPPlayer.cs" />
     <Compile Include="Tools\FileIO.cs" />
+    <Compile Include="Tools\FlagEnumEditor.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Tools\GUITools.cs" />
+    <Compile Include="Tools\ImageTools.cs" />
+    <Compile Include="Tools\MxDtGenerator.cs" />
     <Compile Include="Tools\ObjectExtension.cs" />
     <Compile Include="Tools\OpenFolderDialog.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Sound\SSM.cs" />
     <Compile Include="Tools\SubactionManager.cs" />
-    <None Include="Melee\subactions_fighter.yaml">
+    <None Include="Resources\melee_font.png" />
+    <None Include="Melee\command_fighter.yml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Melee\subactions_item.yaml">
+    <None Include="Melee\command_item.yml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="OpenTK.dll.config" />
@@ -421,6 +507,9 @@
     <None Include="Resources\ico_kabii.png" />
     <None Include="Resources\ico_fuma.png" />
     <None Include="Resources\doc_kabii.png" />
+    <Content Include="lib\IONET.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="lib\nQuant.Core.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -429,10 +518,10 @@
     <None Include="Resources\ts_add.png" />
     <None Include="Resources\ts_up.png" />
     <None Include="Resources\ts_down.png" />
-    <None Include="Melee\subactions_control.yaml">
+    <None Include="Melee\command_controls.yml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Melee\subactions_custom.yaml">
+    <None Include="Melee\command_custom.yml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Resources\ts_stop.png" />
@@ -440,8 +529,11 @@
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="GUI\ArrayMemberEditor.resx">
+    <EmbeddedResource Include="GUI\Controls\ArrayMemberEditor.resx">
       <DependentUpon>ArrayMemberEditor.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="GUI\Controls\GraphEditor.resx">
+      <DependentUpon>GraphEditor.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="GUI\Extra\AJSplitDialog.resx">
       <DependentUpon>AJSplitDialog.cs</DependentUpon>
@@ -452,16 +544,31 @@
     <EmbeddedResource Include="GUI\Extra\MOBJEditor.resx">
       <DependentUpon>MOBJEditor.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="GUI\Extra\PopoutGraphEditor.resx">
+      <DependentUpon>PopoutGraphEditor.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="GUI\Extra\SEMEditor.resx">
       <DependentUpon>SEMEditor.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="GUI\Extra\SEMEditorTool.resx">
+      <DependentUpon>SEMEditorTool.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="GUI\Extra\SoundBankEditor.resx">
+      <DependentUpon>SoundBankEditor.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="GUI\Extra\SoundScriptEditor.resx">
+      <DependentUpon>SoundScriptEditor.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="GUI\Extra\SSMTool.resx">
       <DependentUpon>SSMTool.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="GUI\HelpBox.resx">
+      <DependentUpon>HelpBox.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="GUI\HSDTypeDialog.resx">
       <DependentUpon>HSDTypeDialog.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="GUI\KeyEditor.resx">
+    <EmbeddedResource Include="GUI\Controls\KeyEditor.resx">
       <DependentUpon>KeyEditor.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="GUI\MEX\Controls\MEXEffectControl.resx">
@@ -485,11 +592,23 @@
     <EmbeddedResource Include="GUI\MEX\Controls\MEXMusicControl.resx">
       <DependentUpon>MEXMusicControl.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="GUI\MEX\Controls\MEXSemControl.resx">
+      <DependentUpon>MEXSemControl.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="GUI\MEX\Controls\MEXStageControl.resx">
       <DependentUpon>MEXStageControl.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="GUI\Plugins\AirRide\AirRideGrDataEditor.resx">
+      <DependentUpon>AirRideGrDataEditor.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="GUI\Plugins\AirRide\AriRideGrModelEditor.resx">
+      <DependentUpon>AriRideGrModelEditor.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="GUI\Plugins\AOBJEditor.resx">
       <DependentUpon>AOBJEditor.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="GUI\Plugins\JobjEditorDock.resx">
+      <DependentUpon>JobjEditorDock.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="GUI\Plugins\Melee\CollDataEditor.resx">
       <DependentUpon>CollDataEditor.cs</DependentUpon>
@@ -497,14 +616,17 @@
     <EmbeddedResource Include="GUI\Plugins\GeneralPointEditor.resx">
       <DependentUpon>GeneralPointEditor.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="GUI\Plugins\JOBJEditor.resx">
-      <DependentUpon>JOBJEditor.cs</DependentUpon>
+    <EmbeddedResource Include="GUI\Controls\JobjEditor.resx">
+      <DependentUpon>JobjEditor.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="GUI\Plugins\Melee\HurtBoxEditor.resx">
       <DependentUpon>HurtBoxEditor.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="GUI\MEX\MexDataEditor.resx">
       <DependentUpon>MexDataEditor.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="GUI\Plugins\Melee\SISMenuDataEditor.resx">
+      <DependentUpon>SISMenuDataEditor.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="GUI\ProgressBarDisplay.resx">
       <DependentUpon>ProgressBarDisplay.cs</DependentUpon>
@@ -527,7 +649,7 @@
     <EmbeddedResource Include="GUI\TextureImportDialog.resx">
       <DependentUpon>TextureImportDialog.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="GUI\ViewportControl.resx">
+    <EmbeddedResource Include="GUI\Controls\ViewportControl.resx">
       <DependentUpon>ViewportControl.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
@@ -621,9 +743,7 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\packages\AssimpNet.5.0.0-beta1\build\AssimpNet.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\AssimpNet.5.0.0-beta1\build\AssimpNet.targets'))" />
     <Error Condition="!Exists('..\packages\DirectXTexNet.1.0.0-rc4\build\DirectXTexNet.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\DirectXTexNet.1.0.0-rc4\build\DirectXTexNet.targets'))" />
   </Target>
-  <Import Project="..\packages\AssimpNet.5.0.0-beta1\build\AssimpNet.targets" Condition="Exists('..\packages\AssimpNet.5.0.0-beta1\build\AssimpNet.targets')" />
   <Import Project="..\packages\DirectXTexNet.1.0.0-rc4\build\DirectXTexNet.targets" Condition="Exists('..\packages\DirectXTexNet.1.0.0-rc4\build\DirectXTexNet.targets')" />
 </Project>

@@ -7,10 +7,7 @@ using HSDRawViewer.GUI;
 using WeifenLuo.WinFormsUI.Docking;
 using HSDRawViewer.GUI.Plugins;
 using HSDRaw.Common.Animation;
-using HSDRaw.Melee.Pl;
 using HSDRawViewer.GUI.Extra;
-using System.Linq;
-using static System.ComponentModel.TypeConverter;
 using System.ComponentModel;
 
 namespace HSDRawViewer
@@ -254,7 +251,7 @@ namespace HSDRawViewer
             {
                 if (f.ToLower().EndsWith(".sem"))
                 {
-                    SEMEditor d = new SEMEditor();
+                    SEMEditorTool d = new SEMEditorTool();
                     {
                         d.Show();
                     }
@@ -477,16 +474,16 @@ namespace HSDRawViewer
             {
                 //foreach (var v in dockPanel.Contents)
                 {
-                    if (LastActiveContent is JOBJEditor jedit && jedit.Visible)
+                    if (LastActiveContent is JobjEditorDock jedit && jedit.Visible)
                     {
                         if (SelectedDataNode.Accessor is HSD_MatAnimJoint matjoint)
                             jedit.LoadAnimation(matjoint);
 
                         if (SelectedDataNode.Accessor is HSD_AnimJoint joint)
-                            jedit.LoadAnimation(joint);
+                            jedit.LoadAnimation(new JointAnimManager(joint));
 
                         if (SelectedDataNode.Accessor is HSD_FigaTree tree)
-                            jedit.LoadAnimation(tree);
+                            jedit.LoadAnimation(new JointAnimManager(tree));
                     }
                 }
             }
@@ -654,7 +651,7 @@ namespace HSDRawViewer
         /// <param name="e"></param>
         private void sEMEditorToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            SEMEditor d = new SEMEditor();
+            SEMEditorTool d = new SEMEditorTool();
             {
                 d.Show();
             }

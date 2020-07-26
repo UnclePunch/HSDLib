@@ -143,6 +143,17 @@ namespace HSDRawViewer.Rendering
 
             GXShader.SetInt("selectedBone", jobjManager.IndexOf(jobjManager.SelectetedJOBJ));
 
+
+            // lighting
+            GXShader.SetBoolToInt("perPixelLighting", jobjManager.settings.UsePerPixelLighting);
+            GXShader.SetBoolToInt("light.useCamera", jobjManager.settings.UseCameraLight);
+            GXShader.SetVector3("light.position", jobjManager.settings.LightX, jobjManager.settings.LightY, jobjManager.settings.LightZ);
+            GXShader.SetColor("light.ambient", jobjManager.settings.AmbientColor, 1);
+            GXShader.SetColor("light.diffuse", jobjManager.settings.DiffuseColor, 1);
+            GXShader.SetFloat("light.ambientPower", jobjManager.settings.AmbientPower);
+            GXShader.SetFloat("light.diffusePower", jobjManager.settings.DiffusePower);
+
+            //
             var tb = jobjManager.GetBindTransforms();
             if (tb.Length > 0)
                 GXShader.SetMatrix4x4("binds", tb);
@@ -168,6 +179,12 @@ namespace HSDRawViewer.Rendering
 
             GL.EnableVertexAttribArray(GXShader.GetVertexAttributeUniformLocation("GX_VA_NRM"));
             GL.VertexAttribPointer(GXShader.GetVertexAttributeUniformLocation("GX_VA_NRM"), 3, VertexAttribPointerType.Float, false, GX_Vertex.Stride, 20);
+
+            GL.EnableVertexAttribArray(GXShader.GetVertexAttributeUniformLocation("GX_VA_TAN"));
+            GL.VertexAttribPointer(GXShader.GetVertexAttributeUniformLocation("GX_VA_TAN"), 3, VertexAttribPointerType.Float, false, GX_Vertex.Stride, 32);
+
+            GL.EnableVertexAttribArray(GXShader.GetVertexAttributeUniformLocation("GX_VA_BTAN"));
+            GL.VertexAttribPointer(GXShader.GetVertexAttributeUniformLocation("GX_VA_BTAN"), 3, VertexAttribPointerType.Float, false, GX_Vertex.Stride, 44);
 
             GL.EnableVertexAttribArray(GXShader.GetVertexAttributeUniformLocation("GX_VA_CLR0"));
             GL.VertexAttribPointer(GXShader.GetVertexAttributeUniformLocation("GX_VA_CLR0"), 4, VertexAttribPointerType.Float, true, GX_Vertex.Stride, 56);
@@ -227,6 +244,9 @@ namespace HSDRawViewer.Rendering
             GL.DisableVertexAttribArray(GXShader.GetVertexAttributeUniformLocation("PNMTXIDX"));
             GL.DisableVertexAttribArray(GXShader.GetVertexAttributeUniformLocation("GX_VA_POS"));
             GL.DisableVertexAttribArray(GXShader.GetVertexAttributeUniformLocation("GX_VA_NRM"));
+            GL.DisableVertexAttribArray(GXShader.GetVertexAttributeUniformLocation("GX_VA_TAN"));
+            GL.DisableVertexAttribArray(GXShader.GetVertexAttributeUniformLocation("GX_VA_BTAN"));
+            GL.DisableVertexAttribArray(GXShader.GetVertexAttributeUniformLocation("GX_VA_CLR0"));
             GL.DisableVertexAttribArray(GXShader.GetVertexAttributeUniformLocation("GX_VA_TEX0"));
             GL.DisableVertexAttribArray(GXShader.GetVertexAttributeUniformLocation("GX_VA_TEX1"));
             GL.DisableVertexAttribArray(GXShader.GetVertexAttributeUniformLocation("GX_VA_TEX2"));
@@ -375,6 +395,7 @@ namespace HSDRawViewer.Rendering
                 for(int i = 0; i < textures.Count; i++)
                 {
                     var tex = textures[i];
+                    var displayTex = tex;
 
                     if (tex.ImageData == null)
                         continue;
@@ -391,19 +412,19 @@ namespace HSDRawViewer.Rendering
                     if (animation != null)
                     {
                         var state = animation.GetTextureAnimState(tex);
-                        tex = state.Item1;
+                        displayTex = state.Item1;
                         blending = state.Item2;
                         transform = state.Item3;
                     }
 
-                    if (!imageBufferTextureIndex.ContainsKey(tex.ImageData.ImageData))
+                    if (!imageBufferTextureIndex.ContainsKey(displayTex.ImageData.ImageData))
                     {
-                        imageBufferTextureIndex.Add(tex.ImageData.ImageData, TextureManager.TextureCount);
-                        TextureManager.Add(tex.GetDecodedImageData(), tex.ImageData.Width, tex.ImageData.Height);
+                        imageBufferTextureIndex.Add(displayTex.ImageData.ImageData, TextureManager.TextureCount);
+                        TextureManager.Add(displayTex.GetDecodedImageData(), displayTex.ImageData.Width, displayTex.ImageData.Height);
                         continue;
                     }
 
-                    var texid = TextureManager.Get(imageBufferTextureIndex[tex.ImageData.ImageData]);
+                    var texid = TextureManager.Get(imageBufferTextureIndex[displayTex.ImageData.ImageData]);
 
                     GL.ActiveTexture(TextureUnit.Texture0 + i);
                     GL.BindTexture(TextureTarget.Texture2D, texid);

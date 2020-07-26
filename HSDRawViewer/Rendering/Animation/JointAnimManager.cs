@@ -18,7 +18,40 @@ namespace HSDRawViewer.Rendering
         public List<AnimNode> Nodes { get; internal set; } = new List<AnimNode>();
 
         private int index = 0;
-        
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public JointAnimManager()
+        {
+
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public JointAnimManager(int jointCount)
+        {
+            for (int i = 0; i < jointCount; i++)
+                Nodes.Add(new AnimNode() { Tracks = new List<FOBJ_Player>() });
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public JointAnimManager(HSD_FigaTree tree)
+        {
+            FromFigaTree(tree);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public JointAnimManager(HSD_AnimJoint joint)
+        {
+            FromAnimJoint(joint);
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -251,7 +284,7 @@ namespace HSDRawViewer.Rendering
         /// </summary>
         /// <param name="startFrame"></param>
         /// <param name="endFrame"></param>
-        public void Trim(int startFrame, int endFrame)
+        public virtual void Trim(int startFrame, int endFrame)
         {
             if (startFrame == 0 && endFrame == FrameCount)
                 return;
@@ -262,9 +295,11 @@ namespace HSDRawViewer.Rendering
             {
                 foreach (var t in n.Tracks)
                 {
-                    t.Keys = t.Keys.Where(e => e.Frame >= startFrame && e.Frame <= startFrame + endFrame).ToList();
+                    t.Keys = t.Keys.Where(e => e.Frame >= startFrame && e.Frame <= endFrame).ToList();
                     foreach (var k in t.Keys)
+                    {
                         k.Frame -= startFrame;
+                    }
                 }
             }
         }

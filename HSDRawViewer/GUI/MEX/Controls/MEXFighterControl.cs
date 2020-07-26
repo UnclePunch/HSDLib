@@ -129,14 +129,18 @@ namespace HSDRawViewer.GUI.MEX.Controls
             d.FighterData.RstRuntime.Array = new MEX_RstRuntime[0];
             d.FighterData.FighterItemLookup.Array = new MEX_ItemLookup[0];
             d.FighterData.FighterEffectLookup.Array = new MEX_EffectTypeLookup[0];
-
-            d.FighterData.TargetTestStageLookups = new HSDArrayAccessor<HSD_UShort>();
             d.FighterData.TargetTestStageLookups.Array = new HSD_UShort[0];
+            d.FighterData.FighterSongIDs.Array = new MEX_FighterSongID[0];
 
             d.FighterFunctions.OnLoad.Array = new HSD_UInt[0];
             d.FighterFunctions.OnDeath.Array = new HSD_UInt[0];
             d.FighterFunctions.OnUnknown.Array = new HSD_UInt[0];
-            d.FighterFunctions.MoveLogic.Array = new HSDArrayAccessor<MEX_MoveLogic>[0];
+
+            if (d.MetaData.Flags.HasFlag(MexFlags.ContainMoveLogic))
+                d.FighterFunctions.MoveLogic.Array = new HSDArrayAccessor<MEX_MoveLogic>[0];
+            else
+                d.FighterFunctions.MoveLogicPointers = new HSDArrayAccessor<HSD_UInt>();
+
             d.FighterFunctions.SpecialN.Array = new HSD_UInt[0];
             d.FighterFunctions.SpecialNAir.Array = new HSD_UInt[0];
             d.FighterFunctions.SpecialHi.Array = new HSD_UInt[0];
@@ -176,7 +180,7 @@ namespace HSDRawViewer.GUI.MEX.Controls
 
             d.KirbyData.CapFiles.Array = new MEX_KirbyCapFiles[0];
             d.KirbyData.KirbyCostumes.Array = new MEX_KirbyCostume[0];
-            d.KirbyData.EffectIDs.Array = new HSD_Byte[0];
+            d.KirbyData.KirbyEffectIDs.Array = new HSD_Byte[0];
             d.KirbyFunctions.OnAbilityGain.Array = new HSD_UInt[0];
             d.KirbyFunctions.OnAbilityLose.Array = new HSD_UInt[0];
             d.KirbyFunctions.KirbySpecialN.Array = new HSD_UInt[0];
@@ -289,16 +293,6 @@ namespace HSDRawViewer.GUI.MEX.Controls
 
         #region Events
     
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void saveFightersButton_Click(object sender, EventArgs e)
-        {
-            SaveData(MexData);
-        }
-
         /// <summary>
         /// 
         /// </summary>
@@ -506,6 +500,12 @@ namespace HSDRawViewer.GUI.MEX.Controls
             {
                 var moveLogic = fighter.Functions.MoveLogic;
 
+                if (moveLogic == null)
+                {
+                    MessageBox.Show("This MxDt file does not contains move logic", "Nothing to copy", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                    return;
+                }
+
                 var ftDataFile = Path.Combine(Path.GetDirectoryName(MainForm.Instance.FilePath), fighter.FighterDataPath);
 
                 SBM_FighterData fighterData = null;
@@ -518,7 +518,7 @@ namespace HSDRawViewer.GUI.MEX.Controls
                 int index = 341;
                 foreach (var m in moveLogic)
                 {
-                    table.AppendLine($"\t// State: {index} - " + (fighterData != null && m.AnimationID != -1 && fighterData.SubActionTable.Subactions[m.AnimationID].Name != null ? System.Text.RegularExpressions.Regex.Replace(fighterData.SubActionTable.Subactions[m.AnimationID].Name.Replace("_figatree", ""), @"Ply.*_Share_ACTION_", "") : "Animation: " + m.AnimationID.ToString("X")));
+                    table.AppendLine($"\t// State: {index} - " + (fighterData != null && m.AnimationID != -1 && fighterData.FighterCommandTable.Commands[m.AnimationID].Name != null ? System.Text.RegularExpressions.Regex.Replace(fighterData.FighterCommandTable.Commands[m.AnimationID].Name.Replace("_figatree", ""), @"Ply.*_Share_ACTION_", "") : "Animation: " + m.AnimationID.ToString("X")));
                     index++;
                     table.AppendLine(string.Format(
                         "\t{{" +
@@ -602,13 +602,19 @@ static struct MoveLogic move_logic[] = {
         private void LoadPlCO(ftLoadCommonData ftData)
         {
             var tables = ftData.BoneTables.Array;
+            var unktables = ftData.FighterTable.Array;
 
             if (tables.Length != FighterEntries.Count + 1)
                 MessageBox.Show($"PlCo is missing entries\nExpected {FighterEntries.Count} Found {tables.Length - 1}", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
 
             int fIndex = 0;
             foreach(var fighter in FighterEntries)
-                fighter.BoneTable = tables[fIndex++];
+            {
+                fighter.BoneTable = tables[fIndex];
+                if(fIndex < unktables.Length)
+                    fighter.UnkTable = unktables[fIndex];
+                fIndex++;
+            }
 
             DummyBoneTable = tables[tables.Length - 1];
 
@@ -636,7 +642,10 @@ static struct MoveLogic move_logic[] = {
             tables.Add(DummyBoneTable);
 
             if (PlCo.Roots[0].Data is ftLoadCommonData ftData)
+            {
                 ftData.BoneTables.Array = tables.ToArray();
+                ftData.FighterTable.Array = FighterEntries.Select(e => e.UnkTable).ToArray();
+            }
 
             PlCo.Save(PlCoPath);
         }

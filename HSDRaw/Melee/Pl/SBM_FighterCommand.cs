@@ -2,7 +2,7 @@
 
 namespace HSDRaw.Melee.Pl
 {
-    public class SBM_FighterSubAction : HSDAccessor
+    public class SBM_FighterCommand : HSDAccessor
     {
         public override int TrimmedSize => 0x18;
 
@@ -54,7 +54,12 @@ namespace HSDRaw.Melee.Pl
 
     public class SBM_FighterSubactionData : HSDAccessor
     {
-
+        public override int Trim()
+        {
+            _s.CanBeBuffer = false;
+            _s.Align = false;
+            return base.Trim();
+        }
     }
 
     public class SBM_ItemSubactionData : SBM_FighterSubactionData

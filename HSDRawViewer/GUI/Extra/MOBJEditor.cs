@@ -56,7 +56,7 @@ namespace HSDRawViewer.GUI.Extra
                 int index = 0;
                 foreach(var t in tex)
                 {
-                    var bmp = TOBJConverter.RgbaToImage(t.GetDecodedImageData(), t.ImageData.Width, t.ImageData.Height);
+                    var bmp = Tools.BitmapTools.RgbaToImage(t.GetDecodedImageData(), t.ImageData.Width, t.ImageData.Height);
 
                     TextureList.Images.Add(bmp);
 
@@ -298,7 +298,7 @@ namespace HSDRawViewer.GUI.Extra
 
             if(tobj != null)
             {
-                var bmp = TOBJConverter.RgbaToImage(tobj.GetDecodedImageData(), tobj.ImageData.Width, tobj.ImageData.Height);
+                var bmp = Tools.BitmapTools.RgbaToImage(tobj.GetDecodedImageData(), tobj.ImageData.Width, tobj.ImageData.Height);
 
                 listTexture.Items.Add(new TextureContainer(tobj)
                 {
@@ -326,13 +326,15 @@ namespace HSDRawViewer.GUI.Extra
                 if (tobj != null)
                 {
                     // replace tobj
-                    con.TOBJ._s.SetFromStruct(tobj._s);
+                    con.TOBJ.ImageData = tobj.ImageData;
+                    con.TOBJ.TlutData = tobj.TlutData;
+                    //con.TOBJ._s.SetFromStruct(tobj._s);
                     
                     // replace image in list
                     var image = TextureList.Images[con.ImageIndex];
                     image.Dispose();
 
-                    var newImage = TOBJConverter.RgbaToImage(tobj.GetDecodedImageData(), tobj.ImageData.Width, tobj.ImageData.Height);
+                    var newImage = Tools.BitmapTools.RgbaToImage(tobj.GetDecodedImageData(), tobj.ImageData.Width, tobj.ImageData.Height);
 
                     TextureList.Images[con.ImageIndex] = newImage;
                     
@@ -341,6 +343,7 @@ namespace HSDRawViewer.GUI.Extra
                     
                     // refresh
                     listTexture.Items[listTexture.SelectedIndices[0]] = listTexture.Items[listTexture.SelectedIndices[0]];
+                    listTexture.Invalidate();
                 }
             }
         }

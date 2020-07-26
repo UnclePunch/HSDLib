@@ -48,10 +48,19 @@
             this.label1 = new System.Windows.Forms.Label();
             this.previewBox = new System.Windows.Forms.GroupBox();
             this.toolStrip3 = new System.Windows.Forms.ToolStrip();
-            this.hitboxDisplayButton = new System.Windows.Forms.ToolStripButton();
-            this.displayInterpolationButton = new System.Windows.Forms.ToolStripButton();
-            this.hurtboxDisplayButton = new System.Windows.Forms.ToolStripButton();
-            this.displayThrowModel = new System.Windows.Forms.ToolStripButton();
+            this.displayDropDown = new System.Windows.Forms.ToolStripDropDownButton();
+            this.modelToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.bonesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
+            this.hurtboxesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.hitboxInfoToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.interpolationToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
+            this.eCBToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.groundECH = new System.Windows.Forms.ToolStripMenuItem();
+            this.ledgeGrabBoxToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
+            this.throwModelToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.panel1 = new System.Windows.Forms.Panel();
             this.buttonGoto = new System.Windows.Forms.Button();
             this.referenceLabel = new System.Windows.Forms.Label();
@@ -94,7 +103,7 @@
             this.groupBox1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox1.Location = new System.Drawing.Point(200, 0);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(526, 439);
+            this.groupBox1.Size = new System.Drawing.Size(546, 439);
             this.groupBox1.TabIndex = 4;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Subaction";
@@ -104,7 +113,7 @@
             this.splitter2.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.splitter2.Location = new System.Drawing.Point(3, 127);
             this.splitter2.Name = "splitter2";
-            this.splitter2.Size = new System.Drawing.Size(520, 3);
+            this.splitter2.Size = new System.Drawing.Size(540, 3);
             this.splitter2.TabIndex = 8;
             this.splitter2.TabStop = false;
             // 
@@ -121,7 +130,7 @@
             this.subActionList.Location = new System.Drawing.Point(3, 70);
             this.subActionList.Name = "subActionList";
             this.subActionList.SelectionMode = System.Windows.Forms.SelectionMode.MultiExtended;
-            this.subActionList.Size = new System.Drawing.Size(520, 60);
+            this.subActionList.Size = new System.Drawing.Size(540, 60);
             this.subActionList.TabIndex = 0;
             this.subActionList.DrawItem += new System.Windows.Forms.DrawItemEventHandler(this.subActionList_DrawItem);
             this.subActionList.MeasureItem += new System.Windows.Forms.MeasureItemEventHandler(this.subActionList_MeasureItem);
@@ -149,7 +158,7 @@
             this.toolStripComboBox1});
             this.toolStrip2.Location = new System.Drawing.Point(3, 45);
             this.toolStrip2.Name = "toolStrip2";
-            this.toolStrip2.Size = new System.Drawing.Size(520, 25);
+            this.toolStrip2.Size = new System.Drawing.Size(540, 25);
             this.toolStrip2.TabIndex = 1;
             this.toolStrip2.Text = "toolStrip2";
             // 
@@ -275,7 +284,7 @@
             this.previewBox.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.previewBox.Location = new System.Drawing.Point(3, 130);
             this.previewBox.Name = "previewBox";
-            this.previewBox.Size = new System.Drawing.Size(520, 306);
+            this.previewBox.Size = new System.Drawing.Size(540, 306);
             this.previewBox.TabIndex = 7;
             this.previewBox.TabStop = false;
             this.previewBox.Text = "Preview";
@@ -284,57 +293,118 @@
             // toolStrip3
             // 
             this.toolStrip3.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.hitboxDisplayButton,
-            this.displayInterpolationButton,
-            this.hurtboxDisplayButton,
-            this.displayThrowModel});
+            this.displayDropDown});
             this.toolStrip3.Location = new System.Drawing.Point(3, 16);
             this.toolStrip3.Name = "toolStrip3";
-            this.toolStrip3.Size = new System.Drawing.Size(514, 25);
+            this.toolStrip3.Size = new System.Drawing.Size(534, 25);
             this.toolStrip3.TabIndex = 0;
             this.toolStrip3.Text = "toolStrip3";
             // 
-            // hitboxDisplayButton
+            // displayDropDown
             // 
-            this.hitboxDisplayButton.CheckOnClick = true;
-            this.hitboxDisplayButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.hitboxDisplayButton.Image = ((System.Drawing.Image)(resources.GetObject("hitboxDisplayButton.Image")));
-            this.hitboxDisplayButton.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.hitboxDisplayButton.Name = "hitboxDisplayButton";
-            this.hitboxDisplayButton.Size = new System.Drawing.Size(112, 22);
-            this.hitboxDisplayButton.Text = "Display Hitbox Info";
+            this.displayDropDown.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.displayDropDown.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.modelToolStripMenuItem,
+            this.bonesToolStripMenuItem,
+            this.toolStripSeparator1,
+            this.hurtboxesToolStripMenuItem,
+            this.hitboxInfoToolStripMenuItem,
+            this.interpolationToolStripMenuItem,
+            this.toolStripSeparator3,
+            this.ledgeGrabBoxToolStripMenuItem,
+            this.eCBToolStripMenuItem,
+            this.groundECH,
+            this.toolStripSeparator4,
+            this.throwModelToolStripMenuItem});
+            this.displayDropDown.Image = ((System.Drawing.Image)(resources.GetObject("displayDropDown.Image")));
+            this.displayDropDown.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.displayDropDown.Name = "displayDropDown";
+            this.displayDropDown.Size = new System.Drawing.Size(58, 22);
+            this.displayDropDown.Text = "Display";
             // 
-            // displayInterpolationButton
+            // modelToolStripMenuItem
             // 
-            this.displayInterpolationButton.CheckOnClick = true;
-            this.displayInterpolationButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.displayInterpolationButton.Image = ((System.Drawing.Image)(resources.GetObject("displayInterpolationButton.Image")));
-            this.displayInterpolationButton.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.displayInterpolationButton.Name = "displayInterpolationButton";
-            this.displayInterpolationButton.Size = new System.Drawing.Size(120, 22);
-            this.displayInterpolationButton.Text = "Display Interpolation";
+            this.modelToolStripMenuItem.Checked = true;
+            this.modelToolStripMenuItem.CheckOnClick = true;
+            this.modelToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.modelToolStripMenuItem.Name = "modelToolStripMenuItem";
+            this.modelToolStripMenuItem.Size = new System.Drawing.Size(181, 22);
+            this.modelToolStripMenuItem.Text = "Model";
             // 
-            // hurtboxDisplayButton
+            // bonesToolStripMenuItem
             // 
-            this.hurtboxDisplayButton.CheckOnClick = true;
-            this.hurtboxDisplayButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.hurtboxDisplayButton.Image = ((System.Drawing.Image)(resources.GetObject("hurtboxDisplayButton.Image")));
-            this.hurtboxDisplayButton.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.hurtboxDisplayButton.Name = "hurtboxDisplayButton";
-            this.hurtboxDisplayButton.Size = new System.Drawing.Size(107, 22);
-            this.hurtboxDisplayButton.Text = "Display Hurtboxes";
+            this.bonesToolStripMenuItem.CheckOnClick = true;
+            this.bonesToolStripMenuItem.Name = "bonesToolStripMenuItem";
+            this.bonesToolStripMenuItem.Size = new System.Drawing.Size(181, 22);
+            this.bonesToolStripMenuItem.Text = "Bones";
             // 
-            // displayThrowModel
+            // toolStripSeparator1
             // 
-            this.displayThrowModel.Checked = true;
-            this.displayThrowModel.CheckOnClick = true;
-            this.displayThrowModel.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.displayThrowModel.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.displayThrowModel.Image = ((System.Drawing.Image)(resources.GetObject("displayThrowModel.Image")));
-            this.displayThrowModel.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.displayThrowModel.Name = "displayThrowModel";
-            this.displayThrowModel.Size = new System.Drawing.Size(122, 22);
-            this.displayThrowModel.Text = "Display Throw Model";
+            this.toolStripSeparator1.Name = "toolStripSeparator1";
+            this.toolStripSeparator1.Size = new System.Drawing.Size(178, 6);
+            // 
+            // hurtboxesToolStripMenuItem
+            // 
+            this.hurtboxesToolStripMenuItem.CheckOnClick = true;
+            this.hurtboxesToolStripMenuItem.Name = "hurtboxesToolStripMenuItem";
+            this.hurtboxesToolStripMenuItem.Size = new System.Drawing.Size(181, 22);
+            this.hurtboxesToolStripMenuItem.Text = "Hurtboxes";
+            // 
+            // hitboxInfoToolStripMenuItem
+            // 
+            this.hitboxInfoToolStripMenuItem.CheckOnClick = true;
+            this.hitboxInfoToolStripMenuItem.Name = "hitboxInfoToolStripMenuItem";
+            this.hitboxInfoToolStripMenuItem.Size = new System.Drawing.Size(181, 22);
+            this.hitboxInfoToolStripMenuItem.Text = "Hitbox Info";
+            // 
+            // interpolationToolStripMenuItem
+            // 
+            this.interpolationToolStripMenuItem.CheckOnClick = true;
+            this.interpolationToolStripMenuItem.Name = "interpolationToolStripMenuItem";
+            this.interpolationToolStripMenuItem.Size = new System.Drawing.Size(181, 22);
+            this.interpolationToolStripMenuItem.Text = "Hitbox Interpolation";
+            // 
+            // toolStripSeparator3
+            // 
+            this.toolStripSeparator3.Name = "toolStripSeparator3";
+            this.toolStripSeparator3.Size = new System.Drawing.Size(178, 6);
+            // 
+            // eCBToolStripMenuItem
+            // 
+            this.eCBToolStripMenuItem.CheckOnClick = true;
+            this.eCBToolStripMenuItem.Name = "eCBToolStripMenuItem";
+            this.eCBToolStripMenuItem.Size = new System.Drawing.Size(181, 22);
+            this.eCBToolStripMenuItem.Text = "ECB";
+            // 
+            // groundECH
+            // 
+            this.groundECH.Checked = true;
+            this.groundECH.CheckOnClick = true;
+            this.groundECH.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.groundECH.Name = "groundECH";
+            this.groundECH.Size = new System.Drawing.Size(181, 22);
+            this.groundECH.Text = "Ground ECB";
+            // 
+            // ledgeGrabBoxToolStripMenuItem
+            // 
+            this.ledgeGrabBoxToolStripMenuItem.CheckOnClick = true;
+            this.ledgeGrabBoxToolStripMenuItem.Name = "ledgeGrabBoxToolStripMenuItem";
+            this.ledgeGrabBoxToolStripMenuItem.Size = new System.Drawing.Size(181, 22);
+            this.ledgeGrabBoxToolStripMenuItem.Text = "Ledge Grab Box";
+            // 
+            // toolStripSeparator4
+            // 
+            this.toolStripSeparator4.Name = "toolStripSeparator4";
+            this.toolStripSeparator4.Size = new System.Drawing.Size(178, 6);
+            // 
+            // throwModelToolStripMenuItem
+            // 
+            this.throwModelToolStripMenuItem.Checked = true;
+            this.throwModelToolStripMenuItem.CheckOnClick = true;
+            this.throwModelToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.throwModelToolStripMenuItem.Name = "throwModelToolStripMenuItem";
+            this.throwModelToolStripMenuItem.Size = new System.Drawing.Size(181, 22);
+            this.throwModelToolStripMenuItem.Text = "Throw Model";
             // 
             // panel1
             // 
@@ -345,13 +415,13 @@
             this.panel1.Dock = System.Windows.Forms.DockStyle.Top;
             this.panel1.Location = new System.Drawing.Point(3, 16);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(520, 29);
+            this.panel1.Size = new System.Drawing.Size(540, 29);
             this.panel1.TabIndex = 6;
             // 
             // buttonGoto
             // 
             this.buttonGoto.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonGoto.Location = new System.Drawing.Point(442, 3);
+            this.buttonGoto.Location = new System.Drawing.Point(462, 3);
             this.buttonGoto.Name = "buttonGoto";
             this.buttonGoto.Size = new System.Drawing.Size(75, 23);
             this.buttonGoto.TabIndex = 5;
@@ -376,7 +446,7 @@
             this.cbReference.FormattingEnabled = true;
             this.cbReference.Location = new System.Drawing.Point(90, 4);
             this.cbReference.Name = "cbReference";
-            this.cbReference.Size = new System.Drawing.Size(346, 21);
+            this.cbReference.Size = new System.Drawing.Size(366, 21);
             this.cbReference.TabIndex = 4;
             // 
             // actionList
@@ -478,7 +548,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(726, 439);
+            this.ClientSize = new System.Drawing.Size(746, 439);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.splitter1);
             this.Controls.Add(this.groupBox2);
@@ -535,9 +605,18 @@
         private System.Windows.Forms.ToolStripLabel toolStripLabel1;
         private System.Windows.Forms.ToolStripComboBox toolStripComboBox1;
         private System.Windows.Forms.ToolStrip toolStrip3;
-        private System.Windows.Forms.ToolStripButton hitboxDisplayButton;
-        private System.Windows.Forms.ToolStripButton displayInterpolationButton;
-        private System.Windows.Forms.ToolStripButton hurtboxDisplayButton;
-        private System.Windows.Forms.ToolStripButton displayThrowModel;
+        private System.Windows.Forms.ToolStripDropDownButton displayDropDown;
+        private System.Windows.Forms.ToolStripMenuItem bonesToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
+        private System.Windows.Forms.ToolStripMenuItem hitboxInfoToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem interpolationToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem hurtboxesToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem throwModelToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
+        private System.Windows.Forms.ToolStripMenuItem eCBToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem ledgeGrabBoxToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator4;
+        private System.Windows.Forms.ToolStripMenuItem modelToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem groundECH;
     }
 }

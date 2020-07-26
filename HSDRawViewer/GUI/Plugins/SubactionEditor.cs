@@ -139,7 +139,7 @@ namespace HSDRawViewer.GUI
 
         public DockState DefaultDockState => DockState.Document;
 
-        public Type[] SupportedTypes => new Type[] { typeof(SBM_SubActionTable), typeof(SBM_FighterSubactionData), typeof(SBM_ItemSubactionData) };
+        public Type[] SupportedTypes => new Type[] { typeof(SBM_FighterCommandTable), typeof(SBM_FighterSubactionData), typeof(SBM_ItemSubactionData) };
 
         public DataNode Node
         {
@@ -150,9 +150,9 @@ namespace HSDRawViewer.GUI
                 if (value.Accessor is SBM_ItemSubactionData suidata)
                 {
                     SubactionGroup = SubactionGroup.Item;
-                    SBM_FighterSubAction[] su = new SBM_FighterSubAction[]
+                    SBM_FighterCommand[] su = new SBM_FighterCommand[]
                     {
-                        new SBM_FighterSubAction()
+                        new SBM_FighterCommand()
                         {
                             SubAction = suidata,
                             Name = "Script"
@@ -164,9 +164,9 @@ namespace HSDRawViewer.GUI
                 }else
                 if (value.Accessor is SBM_FighterSubactionData sudata)
                 {
-                    SBM_FighterSubAction[] su = new SBM_FighterSubAction[]
+                    SBM_FighterCommand[] su = new SBM_FighterCommand[]
                     {
-                        new SBM_FighterSubAction()
+                        new SBM_FighterCommand()
                         {
                             SubAction = sudata,
                             Name = "Script"
@@ -176,9 +176,9 @@ namespace HSDRawViewer.GUI
                     LoadActions(su);
                     RefreshActionList();
                 }else
-                if(value.Accessor is SBM_SubActionTable SubactionTable)
+                if(value.Accessor is SBM_FighterCommandTable SubactionTable)
                 {
-                    LoadActions(SubactionTable.Subactions);
+                    LoadActions(SubactionTable.Commands);
                     RefreshActionList();
 
                     if (Node.Parent is DataNode parent)
@@ -189,6 +189,8 @@ namespace HSDRawViewer.GUI
 
                             if (plDat.Hurtboxes != null)
                                 Hurtboxes.AddRange(plDat.Hurtboxes.Hurtboxes);
+                            
+                            ECB = plDat.EnvironmentCollision;
 
                             if (plDat.ModelLookupTables != null)
                             {
@@ -215,6 +217,8 @@ namespace HSDRawViewer.GUI
 
         private DataNode _node;
 
+        private SBM_EnvironmentCollision ECB = null;
+
         private readonly List<Action> AllScripts = new List<Action>();
 
         public SubactionGroup SubactionGroup = SubactionGroup.Fighter;
@@ -227,6 +231,8 @@ namespace HSDRawViewer.GUI
             InitializeComponent();
 
             panel1.Visible = false;
+
+            DoubleBuffered = true;
 
             viewport = new ViewportControl();
             viewport.Dock = DockStyle.Fill;
@@ -254,7 +260,7 @@ namespace HSDRawViewer.GUI
         /// 
         /// </summary>
         /// <param name="Subactions"></param>
-        private void LoadActions(SBM_FighterSubAction[] Subactions)
+        private void LoadActions(SBM_FighterCommand[] Subactions)
         {
             HashSet<HSDStruct> aHash = new HashSet<HSDStruct>();
             Queue<HSDStruct> extra = new Queue<HSDStruct>();
@@ -359,18 +365,24 @@ namespace HSDRawViewer.GUI
         /// <param name="script"></param>
         private void RefreshSubactionList(Action script)
         {
+            // get subaction data
             var data = script._struct.GetData();
 
+            // set the script for the subaction processer for rendering
             SubactionProcess.SetStruct(script._struct, SubactionGroup);
 
+            // begin filling the subaction list
             subActionList.BeginUpdate();
             subActionList.Items.Clear();
             for (int i = 0; i < data.Length;)
             {
+                // get subaction
                 var sa = SubactionManager.GetSubaction((byte)(data[i]), SubactionGroup);
 
+                // create new script node
                 var sas = new SubActionScript(SubactionGroup);
-
+                
+                // store any pointers within this subaction
                 foreach (var r in script._struct.References)
                 {
                     if (r.Key >= i && r.Key < i + sa.ByteSize)
@@ -380,21 +392,25 @@ namespace HSDRawViewer.GUI
                             sas.Reference = r.Value;
                 }
 
+                // copy subaction data to script node
                 var sub = new byte[sa.ByteSize];
 
                 if (i + sub.Length > data.Length)
-                {
                     break;
-                }
 
                 for (int j = 0; j < sub.Length; j++)
                     sub[j] = data[i + j];
+                
+                i += sa.ByteSize;
 
                 sas.data = sub;
 
+                // add new script node
                 subActionList.Items.Add(sas);
 
-                i += sa.ByteSize;
+                // if end of script then stop reading
+                if (sa.Code == 0)
+                    break;
             }
             subActionList.EndUpdate();
         }
@@ -812,6 +828,7 @@ namespace HSDRawViewer.GUI
                     if (scripts != null)
                     {
                         // insert scripts
+                        scripts.Reverse();
                         foreach (var v in scripts)
                             // only paste subactions the belong to this group
                             if(v.GetGroup() == SubactionGroup)
@@ -947,6 +964,8 @@ namespace HSDRawViewer.GUI
 
         private List<int> HiddenDOBJIndices = new List<int>();
 
+        private string AnimationName = "";
+
         /// <summary>
         /// 
         /// </summary>
@@ -987,7 +1006,7 @@ namespace HSDRawViewer.GUI
             JOBJManager.ModelScale = ModelScale;
             JOBJManager.DOBJManager.HiddenDOBJs.Clear();
             JOBJManager.HideDOBJs(HiddenDOBJIndices);
-            JOBJManager.RenderBones = false;
+            JOBJManager.settings.RenderBones = false;
 
             AJBuffer = System.IO.File.ReadAllBytes(aFile);
 
@@ -1000,7 +1019,7 @@ namespace HSDRawViewer.GUI
         /// <returns></returns>
         private Dictionary<int, Vector3> CalculatePreviousState()
         {
-            if (viewport.Frame == 0 || !displayInterpolationButton.Checked)
+            if (viewport.Frame == 0 || !interpolationToolStripMenuItem.Checked)
                 return null;
 
             Dictionary<int, Vector3> previousPosition = new Dictionary<int, Vector3>();
@@ -1044,19 +1063,27 @@ namespace HSDRawViewer.GUI
 
             JOBJManager.Frame = viewport.Frame;
 
-            if (SubactionProcess.CharacterInvisibility)
+            JOBJManager.settings.RenderBones = bonesToolStripMenuItem.Checked;
+                
+            // character invisibility
+            if (SubactionProcess.CharacterInvisibility || !modelToolStripMenuItem.Checked)
                 JOBJManager.UpdateNoRender();
             else
                 JOBJManager.Render(cam);
 
-            if (hurtboxDisplayButton.Checked)
+            // hurtbox collision
+            if (hurtboxesToolStripMenuItem.Checked)
                 HurtboxRenderer.Render(JOBJManager, Hurtboxes, null, SubactionProcess.BoneCollisionStates, SubactionProcess.BodyCollisionState);
             
+            // hitbox collision
             foreach (var hb in SubactionProcess.Hitboxes)
             {
                 var boneID = hb.BoneID;
                 if (boneID == 0)
-                    boneID = 1;
+                    if (JOBJManager.GetJOBJ(1).Child == null) // special case for character like mewtwo with a leading bone
+                        boneID = 2;
+                    else
+                        boneID = 1;
 
                 var transform = Matrix4.CreateTranslation(hb.Point1) * JOBJManager.GetWorldTransform(boneID);
 
@@ -1069,7 +1096,7 @@ namespace HSDRawViewer.GUI
                     hbColor = GrabboxColor;
 
                 // drawing a capsule takes more processing power, so only draw it if necessary
-                if (displayInterpolationButton.Checked && previousPosition != null && previousPosition.ContainsKey(hb.ID))
+                if (interpolationToolStripMenuItem.Checked && previousPosition != null && previousPosition.ContainsKey(hb.ID))
                 {
                     var pos = Vector3.TransformPosition(Vector3.Zero, transform);
                     var cap = new Capsule(pos, previousPosition[hb.ID], hb.Size);
@@ -1079,7 +1106,7 @@ namespace HSDRawViewer.GUI
                 {
                     DrawShape.DrawSphere(transform, hb.Size, 16, 16, hbColor, alpha);
                 }
-                if (hitboxDisplayButton.Checked)
+                if (hitboxInfoToolStripMenuItem.Checked)
                 {
                     if (hb.Angle != 361)
                         DrawShape.DrawAngleLine(cam, transform, hb.Size, MathHelper.DegreesToRadians(hb.Angle));
@@ -1089,7 +1116,62 @@ namespace HSDRawViewer.GUI
                 }
             }
 
-            if(displayThrowModel.Checked && !SubactionProcess.ThrownFighter && ThrowDummyManager.JointCount > 0)
+            // environment collision
+            if (ECB != null)
+            {
+                var topN = JOBJManager.GetWorldTransform(1).ExtractTranslation();
+
+                var bone1 = Vector3.TransformPosition(Vector3.Zero, JOBJManager.GetWorldTransform(ECB.ECBBone1));
+                var bone2 = Vector3.TransformPosition(Vector3.Zero, JOBJManager.GetWorldTransform(ECB.ECBBone2));
+                var bone3 = Vector3.TransformPosition(Vector3.Zero, JOBJManager.GetWorldTransform(ECB.ECBBone3));
+                var bone4 = Vector3.TransformPosition(Vector3.Zero, JOBJManager.GetWorldTransform(ECB.ECBBone4));
+                var bone5 = Vector3.TransformPosition(Vector3.Zero, JOBJManager.GetWorldTransform(ECB.ECBBone5));
+                var bone6 = Vector3.TransformPosition(Vector3.Zero, JOBJManager.GetWorldTransform(ECB.ECBBone6));
+
+                var minx = float.MaxValue;
+                var miny = float.MaxValue;
+                var maxx = float.MinValue;
+                var maxy = float.MinValue;
+
+                foreach (var p in new Vector3[] { bone1, bone2, bone3, bone4, bone5, bone6 })
+                {
+                    minx = Math.Min(minx, p.Z);
+                    maxx = Math.Max(maxx, p.Z);
+                    miny = Math.Min(miny, p.Y);
+                    maxy = Math.Max(maxy, p.Y);
+                }
+
+                // ecb diamond
+                if (eCBToolStripMenuItem.Checked)
+                {
+                    DrawShape.DrawECB(topN, minx, miny, maxx, maxy, groundECH.Checked);
+                }
+
+                // ledge grav
+                if (ledgeGrabBoxToolStripMenuItem.Checked)
+                {
+                    var correct = Math.Abs(minx - maxx) / 2;
+
+                    //behind
+                    DrawShape.DrawLedgeBox(
+                        topN.Z,
+                        topN.Y + ECB.VerticalOffsetFromTop - ECB.VerticalScale / 2,
+                        topN.Z - (correct + ECB.HorizontalScale),
+                        topN.Y + ECB.VerticalOffsetFromTop + ECB.VerticalScale / 2,
+                        Color.Red);
+
+                    // in front
+                    DrawShape.DrawLedgeBox(
+                        topN.Z,
+                        topN.Y + ECB.VerticalOffsetFromTop - ECB.VerticalScale / 2,
+                        topN.Z + correct + ECB.HorizontalScale,
+                        topN.Y + ECB.VerticalOffsetFromTop + ECB.VerticalScale / 2,
+                        Color.Blue);
+                }
+            }
+
+            // throw dummy
+            if(throwModelToolStripMenuItem.Checked && !SubactionProcess.ThrownFighter && ThrowDummyManager.JointCount > 0)
             {
                 if(viewport.Frame < ThrowDummyManager.Animation.FrameCount)
                     ThrowDummyManager.Frame = viewport.Frame;
@@ -1130,6 +1212,9 @@ namespace HSDRawViewer.GUI
 
                 ThrowDummyManager.CleanupRendering();
                 ThrowDummyManager = new JOBJManager();
+
+                AnimationName = name;
+
                 if (name.Contains("Throw") && !name.Contains("Taro"))
                 {
                     // find thrown anim

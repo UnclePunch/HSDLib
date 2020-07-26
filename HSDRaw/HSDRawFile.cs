@@ -334,7 +334,10 @@ namespace HSDRaw
         /// <returns></returns>
         public bool IsBuffer(HSDStruct a)
         {
-            return (a.References.Count == 0 && a.Length >= 0x40) || a.IsTextureBuffer;
+            if (!a.CanBeBuffer)
+                return false;
+
+            return (a.References.Count == 0 && a.Length > 0x40) || a.IsTextureBuffer;
         }
 
         //https://stackoverflow.com/questions/16340/how-do-i-generate-a-hashcode-from-a-byte-array-in-c/16381
@@ -463,6 +466,15 @@ namespace HSDRaw
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        public void SetStructFlags()
+        {
+            foreach (var r in Roots)
+                r.Data.SetStructFlags();
+        }
+
+        /// <summary>
         /// saves dat data to stream with optional alignment
         /// </summary>
         /// <param name="stream"></param>
@@ -474,6 +486,9 @@ namespace HSDRaw
 
             if (trim)
                 TrimData();
+
+            // TODO:
+            //SetStructFlags();
 
             // gather all structs--------------------------------------------------------------------------
             var allStructs = GetAllStructs();
@@ -534,7 +549,8 @@ namespace HSDRaw
                     if (IsBuffer(s) && bufferAlign) 
                         writer.Align(0x20);
                     else
-                        writer.Align(4);
+                        if(s.Align)
+                            writer.Align(4);
 
                     structToOffset.Add(s, (int)writer.BaseStream.Position - 0x20);
                     writer.Write(s.GetData());
@@ -898,6 +914,12 @@ namespace HSDRaw
             if (rootString.StartsWith("mobj"))
             {
                 var acc = new HSD_MOBJ();
+                acc._s = str;
+                a = acc;
+            }
+            if (rootString.StartsWith("SIS_"))
+            {
+                var acc = new SBM_SISData();
                 acc._s = str;
                 a = acc;
             }
