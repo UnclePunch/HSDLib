@@ -40,9 +40,6 @@
     <ApplicationIcon>dogg.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="AssimpNet, Version=5.0.0.0, Culture=neutral, PublicKeyToken=0d51b391f59f42a6, processorArchitecture=MSIL">
-      <HintPath>..\packages\AssimpNet.5.0.0-beta1\lib\net40\AssimpNet.dll</HintPath>
-    </Reference>
     <Reference Include="Be.Windows.Forms.HexBox, Version=1.6.1.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Be.Windows.Forms.HexBox.1.6.1\lib\net40\Be.Windows.Forms.HexBox.dll</HintPath>
     </Reference>
@@ -51,6 +48,10 @@
     </Reference>
     <Reference Include="DirectXTexNet, Version=1.0.0.4, Culture=neutral, PublicKeyToken=67e4f5ed452a4f5d, processorArchitecture=MSIL">
       <HintPath>..\packages\DirectXTexNet.1.0.0-rc4\lib\netstandard2.0\DirectXTexNet.dll</HintPath>
+    </Reference>
+    <Reference Include="IONET, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>lib\IONET.dll</HintPath>
     </Reference>
     <Reference Include="Ionic.Zip.Reduced, Version=1.9.1.8, Culture=neutral, PublicKeyToken=edbe51ad942a3f5c, processorArchitecture=MSIL">
       <HintPath>..\packages\DotNetZip.Reduced.1.9.1.8\lib\net20\Ionic.Zip.Reduced.dll</HintPath>
@@ -70,6 +71,10 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Design" />
     <Reference Include="System.IO.Compression.FileSystem" />
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -119,6 +124,9 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="ContextMenus\MatAnimContextMenu.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ContextMenus\JointAnimContextMenu.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="ContextMenus\MatAnimJointContextMenu.cs">
@@ -312,11 +320,30 @@
     <Compile Include="GUI\MEX\IMEXControl.cs" />
     <Compile Include="GUI\MEX\Tools\StagePackage.cs" />
     <Compile Include="GUI\MEX\Tools\FighterPackage.cs" />
+    <Compile Include="GUI\Plugins\AirRide\AirRideGrCollisionManager.cs" />
+    <Compile Include="GUI\Plugins\AirRide\AirRideGrDataEditor.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="GUI\Plugins\AirRide\AirRideGrDataEditor.Designer.cs">
+      <DependentUpon>AirRideGrDataEditor.cs</DependentUpon>
+    </Compile>
+    <Compile Include="GUI\Plugins\AirRide\AriRideGrModelEditor.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="GUI\Plugins\AirRide\AriRideGrModelEditor.Designer.cs">
+      <DependentUpon>AriRideGrModelEditor.cs</DependentUpon>
+    </Compile>
     <Compile Include="GUI\Plugins\AOBJEditor.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="GUI\Plugins\AOBJEditor.Designer.cs">
       <DependentUpon>AOBJEditor.cs</DependentUpon>
+    </Compile>
+    <Compile Include="GUI\Plugins\JobjEditorDock.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="GUI\Plugins\JobjEditorDock.Designer.cs">
+      <DependentUpon>JobjEditorDock.cs</DependentUpon>
     </Compile>
     <Compile Include="GUI\Plugins\Melee\CollDataEditor.cs">
       <SubType>Form</SubType>
@@ -331,11 +358,11 @@
     <Compile Include="GUI\Plugins\GeneralPointEditor.Designer.cs">
       <DependentUpon>GeneralPointEditor.cs</DependentUpon>
     </Compile>
-    <Compile Include="GUI\Plugins\JOBJEditor.cs">
-      <SubType>Form</SubType>
+    <Compile Include="GUI\Controls\JobjEditor.cs">
+      <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="GUI\Plugins\JOBJEditor.Designer.cs">
-      <DependentUpon>JOBJEditor.cs</DependentUpon>
+    <Compile Include="GUI\Controls\JobjEditor.Designer.cs">
+      <DependentUpon>JobjEditor.cs</DependentUpon>
     </Compile>
     <Compile Include="GUI\Plugins\Melee\CollDataItems.cs" />
     <Compile Include="GUI\Plugins\Melee\DummyThrowModel.cs" />
@@ -480,6 +507,9 @@
     <None Include="Resources\ico_kabii.png" />
     <None Include="Resources\ico_fuma.png" />
     <None Include="Resources\doc_kabii.png" />
+    <Content Include="lib\IONET.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="lib\nQuant.Core.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -568,8 +598,17 @@
     <EmbeddedResource Include="GUI\MEX\Controls\MEXStageControl.resx">
       <DependentUpon>MEXStageControl.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="GUI\Plugins\AirRide\AirRideGrDataEditor.resx">
+      <DependentUpon>AirRideGrDataEditor.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="GUI\Plugins\AirRide\AriRideGrModelEditor.resx">
+      <DependentUpon>AriRideGrModelEditor.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="GUI\Plugins\AOBJEditor.resx">
       <DependentUpon>AOBJEditor.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="GUI\Plugins\JobjEditorDock.resx">
+      <DependentUpon>JobjEditorDock.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="GUI\Plugins\Melee\CollDataEditor.resx">
       <DependentUpon>CollDataEditor.cs</DependentUpon>
@@ -577,8 +616,8 @@
     <EmbeddedResource Include="GUI\Plugins\GeneralPointEditor.resx">
       <DependentUpon>GeneralPointEditor.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="GUI\Plugins\JOBJEditor.resx">
-      <DependentUpon>JOBJEditor.cs</DependentUpon>
+    <EmbeddedResource Include="GUI\Controls\JobjEditor.resx">
+      <DependentUpon>JobjEditor.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="GUI\Plugins\Melee\HurtBoxEditor.resx">
       <DependentUpon>HurtBoxEditor.cs</DependentUpon>
@@ -704,9 +743,7 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\packages\AssimpNet.5.0.0-beta1\build\AssimpNet.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\AssimpNet.5.0.0-beta1\build\AssimpNet.targets'))" />
     <Error Condition="!Exists('..\packages\DirectXTexNet.1.0.0-rc4\build\DirectXTexNet.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\DirectXTexNet.1.0.0-rc4\build\DirectXTexNet.targets'))" />
   </Target>
-  <Import Project="..\packages\AssimpNet.5.0.0-beta1\build\AssimpNet.targets" Condition="Exists('..\packages\AssimpNet.5.0.0-beta1\build\AssimpNet.targets')" />
   <Import Project="..\packages\DirectXTexNet.1.0.0-rc4\build\DirectXTexNet.targets" Condition="Exists('..\packages\DirectXTexNet.1.0.0-rc4\build\DirectXTexNet.targets')" />
 </Project>
