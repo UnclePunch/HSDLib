@@ -40,7 +40,7 @@ namespace HSDRawViewer.Tools
         // Menu
 
             { "CSSIconData", new Tuple<int, int>(0x3EDA48, 0x398) },
-            { "SSSIconData", new Tuple<int, int>(0x3ED6D0, 0x3C0) },
+            { "SSSIconData", new Tuple<int, int>(0x3ED6D0, 0x348) },
             
 	    // Fighter Data
 
@@ -97,7 +97,7 @@ namespace HSDRawViewer.Tools
             { "CommonItems", new Tuple<int, int>(0x3EE4C4, 0xA14) },
             { "FighterItems", new Tuple<int, int>(0x3F0100, 0x1BA8) },
             { "Pokemon", new Tuple<int, int>(0x3EF3CC, 0xB04) },
-            { "StageItems", new Tuple<int, int>(0x3F0100, 0x6CC) },
+            { "StageItems", new Tuple<int, int>(0x3F1D20, 0x6CC) },
 
             // kirby 
 
@@ -321,7 +321,31 @@ namespace HSDRawViewer.Tools
             data.FighterFunctions.onSmashDown = new HSDArrayAccessor<HSD_UInt>() { _s = new HSDStruct(0x84) };
             data.FighterFunctions.onSmashForward = new HSDArrayAccessor<HSD_UInt>() { _s = new HSDStruct(0x84) };
             data.FighterFunctions.onSmashUp = new HSDArrayAccessor<HSD_UInt>() { _s = new HSDStruct(0x84) };
-            
+
+            // special double jump code
+            for(int i = 0; i < data.FighterFunctions.enterSpecialDoubleJump.Length; i++)
+            {
+                switch (i)
+                {
+                    case 0x08: // Ness
+                        data.FighterFunctions.enterSpecialDoubleJump[i] = new HSD_UInt() { Value = 0x800cbd18 };
+                        break;
+                    case 0x0E: // Yoshi
+                        data.FighterFunctions.enterSpecialDoubleJump[i] = new HSD_UInt() { Value = 0x800cbe98 };
+                        break;
+                    case 0x09: // Peach
+                        data.FighterFunctions.enterSpecialDoubleJump[i] = new HSD_UInt() { Value = 0x800cc0e8 };
+                        break;
+                    case 0x10: // Mewtwo
+                        data.FighterFunctions.enterSpecialDoubleJump[i] = new HSD_UInt() { Value = 0x800cc238 };
+                        break;
+                    default:
+                        data.FighterFunctions.enterSpecialDoubleJump[i] = new HSD_UInt() { Value = 0x800cbbc0 };
+                        break;
+                }
+
+            }
+
             // Optional Move Logic
             if (settings.IncludeMoveLogic)
             {
@@ -379,12 +403,12 @@ namespace HSDRawViewer.Tools
                     Array = dol.ReadStringTable(EffectStringOffset, data.MetaData.NumOfEffects * 3)
                 }._s
             };
-            data.EffectTable.EffectRuntime = new HSDAccessor() { _s = new HSDStruct(0x60) };
-            data.EffectTable.RuntimeArray1 = new HSDAccessor() { _s = new HSDStruct(0xCC) };
-            data.EffectTable.RuntimeArray2 = new HSDAccessor() { _s = new HSDStruct(0xCC) };
-            data.EffectTable.RuntimeArray3 = new HSDAccessor() { _s = new HSDStruct(0xCC) };
-            data.EffectTable.RuntimeArray4 = new HSDAccessor() { _s = new HSDStruct(0xCC) };
-            data.EffectTable.RuntimeArray5 = new HSDAccessor() { _s = new HSDStruct(0xCC) };
+            data.EffectTable.RuntimeUnk1 = new HSDAccessor() { _s = new HSDStruct(0x60) };
+            data.EffectTable.RuntimeUnk3 = new HSDAccessor() { _s = new HSDStruct(0xCC) };
+            data.EffectTable.RuntimeTexGrNum = new HSDAccessor() { _s = new HSDStruct(0xCC) };
+            data.EffectTable.RuntimeTexGrData = new HSDAccessor() { _s = new HSDStruct(0xCC) };
+            data.EffectTable.RuntimeUnk4 = new HSDAccessor() { _s = new HSDStruct(0xCC) };
+            data.EffectTable.RuntimePtclLast = new HSDAccessor() { _s = new HSDStruct(0xCC) };
             data.EffectTable.RuntimeArray6 = new HSDAccessor() { _s = new HSDStruct(0xCC) };
 
 
@@ -400,6 +424,8 @@ namespace HSDRawViewer.Tools
                 for (int i = 0; i < data.ItemTable.CommonItems.Length; i++)
                 {
                     var off = (uint)data.ItemTable.CommonItems._s.GetInt32(i * 0x3C);
+                    System.Diagnostics.Debug.WriteLine($"{GUI.MEX.DefaultItemNames.CommonItemNames[i],-40} \v0x{off.ToString("X8")} \v0x{DOLScrubber.RAMToDOL(off).ToString("X8")} \v{CommonItemStates[i]}");
+
                     if (off == 0 || CommonItemStates[i] == 0)
                         continue;
                     off = DOLScrubber.RAMToDOL(off);
@@ -408,6 +434,8 @@ namespace HSDRawViewer.Tools
                 for (int i = 0; i < data.ItemTable.FighterItems.Length; i++)
                 {
                     var off = (uint)data.ItemTable.FighterItems._s.GetInt32(i * 0x3C);
+                    System.Diagnostics.Debug.WriteLine($"{GUI.MEX.DefaultItemNames.FighterItemNames[i],-40} \v0x{off.ToString("X8")} \v0x{DOLScrubber.RAMToDOL(off).ToString("X8")} \v{FighterItemStates[i]}");
+
                     if (off == 0 || FighterItemStates[i] == 0)
                         continue;
                     off = DOLScrubber.RAMToDOL(off);
@@ -416,14 +444,18 @@ namespace HSDRawViewer.Tools
                 for (int i = 0; i < data.ItemTable.Pokemon.Length; i++)
                 {
                     var off = (uint)data.ItemTable.Pokemon._s.GetInt32(i * 0x3C);
+                    System.Diagnostics.Debug.WriteLine($"{GUI.MEX.DefaultItemNames.PokemonItemNames[i],-40} \v0x{off.ToString("X8")} \v0x{DOLScrubber.RAMToDOL(off).ToString("X8")} \v{PokemonItemStates[i]}");
+
                     if (off == 0 || PokemonItemStates[i] == 0)
                         continue;
-                    off = DOLScrubber.RAMToDOL(off);
+                     off = DOLScrubber.RAMToDOL(off);
                     data.ItemTable.Pokemon._s.SetReferenceStruct(i * 0x3C, new HSDStruct(dol.GetSection(off, PokemonItemStates[i] * itemStride)));
                 }
                 for (int i = 0; i < data.ItemTable.StageItems.Length; i++)
                 {
                     var off = (uint)data.ItemTable.StageItems._s.GetInt32(i * 0x3C);
+                    System.Diagnostics.Debug.WriteLine($"{GUI.MEX.DefaultItemNames.StageItemNames[i],-40} \v0x{off.ToString("X8")} \v0x{DOLScrubber.RAMToDOL(off).ToString("X8")} \v{StageItemStates[i]}");
+
                     if (off == 0 || StageItemStates[i] == 0)
                         continue;
                     off = DOLScrubber.RAMToDOL(off);
@@ -605,7 +637,7 @@ namespace HSDRawViewer.Tools
 
         private static readonly byte[] MoveLogicEntries = new byte[] {
                               12,35,23,46,203,23,21,24,36,26,
-                              16,26,26,18,28,32,20,20,32,18,
+                              26,26,26,18,28,32,20,20,32,18,
                               22,10,35,26,40,23,32,50,49,0,
                               0,24,1};
 
