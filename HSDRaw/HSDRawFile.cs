@@ -927,11 +927,17 @@ namespace HSDRaw
             else
             if (rootString.Equals("evMenu"))
             {
-                var acc = new SBM_EventMenu();
+                var acc = new SBM_TM_EventMenu();
                 acc._s = str;
                 a = acc;
             }
-
+            else
+            if (rootString.Equals("labData"))
+            {
+                var acc = new SBM_TM_LabData();
+                acc._s = str;
+                a = acc;
+            }
             return a;
         }
     }
