@@ -945,6 +945,12 @@ namespace HSDRaw
                 acc._s = str;
                 a = acc;
             }
+            if (rootString.Equals("importData"))
+            {
+                var acc = new SBM_TM_ImportData();
+                acc._s = str;
+                a = acc;
+            }
             else
             if (rootString.Equals("lbBgFlashColAnimData"))
             {
