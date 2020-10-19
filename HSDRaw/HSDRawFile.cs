@@ -257,20 +257,41 @@ namespace HSDRaw
                 Debug.WriteLine("Find All Parsed: " + sw.ElapsedMilliseconds);
                 sw.Restart();
 
+                HashSet<HSDStruct> orphans = new HashSet<HSDStruct>();
+
+                foreach (var str in offsetToStruct)
+                    orphans.Add(str.Value);
+
                 // set references-------------------------
                 foreach (var str in offsetToStruct)
                 {
-                    var offsets = offsetToOffsets[str.Key];
-                    var innerOffsets = offsetToInnerOffsets[str.Key];
-                    for(int i = 0; i < offsets.Count; i++)
+                    var _o = str.Key;
+                    var _s = str.Value;
+
+                    var offsets = offsetToOffsets[_o];
+                    var innerOffsets = offsetToInnerOffsets[_o];
+
+                    // set references in struct
+                    for (int i = 0; i < offsets.Count; i++)
                     {
-                        if(offsetToStruct.ContainsKey(offsets[i]) && str.Value.Length >= innerOffsets[i] - str.Key + 4)
-                            str.Value.SetReferenceStruct(innerOffsets[i] - str.Key, offsetToStruct[offsets[i]]);
+                        if (offsetToStruct.ContainsKey(offsets[i]) && _s.Length >= innerOffsets[i] - _o + 4)
+                        {
+                            var refstruct = offsetToStruct[offsets[i]];
+
+                            _s.SetReferenceStruct(innerOffsets[i] - _o, refstruct);
+
+                            // this not is not an orphan
+                            if (refstruct != _s && orphans.Contains(refstruct))
+                                orphans.Remove(refstruct);
+                        }
                     }
 
                     _structCache.Add(str.Value);
                     _structCacheToOffset.Add(str.Value, str.Key);
                 }
+
+                Debug.WriteLine("Set References: " + sw.ElapsedMilliseconds);
+                sw.Restart();
 
                 // set roots
                 for (int i = 0; i < rootOffsets.Count; i++)
@@ -279,6 +300,9 @@ namespace HSDRaw
                     HSDAccessor a = GuessAccessor(rootStrings[i], str);
 
                     Roots.Add(new HSDRootNode() { Name = rootStrings[i], Data = a });
+
+                    if (orphans.Contains(str))
+                        orphans.Remove(str);
                 }
 
 
@@ -289,14 +313,72 @@ namespace HSDRaw
                     HSDAccessor a = new HSDAccessor();
                     a._s = str;
                     References.Add(new HSDRootNode() { Name = refStrings[i], Data = a });
+
+                    if (orphans.Contains(str))
+                        orphans.Remove(str);
                 }
 
+                // process special orphans
+                foreach (var orphan in orphans)
+                {
+                    HSDStruct str = orphan;
+                    HSDAccessor a = new HSDAccessor() { _s = str };
+
+                    // hack: if this is a subaction append it to previous struct
+                    if(str.References.Count > 0)
+                    {
+                        var maxkey = str.References.Keys.Max();
+                        if (str.References[maxkey] == str && maxkey >= 8 && str.GetInt32(maxkey - 4) == 0x1C000000)
+                        {
+                            // get previous struct
+                            var prev = GetPreviousStruct(str);
+
+                            // add goto pointer to subaction
+                            if (prev != null)
+                            {
+                                var len = prev.Length;
+                                prev.Resize(prev.Length + 8);
+                                prev.SetInt32(len, 0x1C000000);
+                                prev.SetReferenceStruct(len + 4, str);
+                                continue;
+                            }
+                        }
+                    }
+
+#if DEBUG
+                    // add orphans for debugging
+                    Roots.Add(new HSDRootNode() { Name = "Orphan0x" + _structCacheToOffset[orphan].ToString("X"), Data = a });
+#endif
+
+                }
 
                 Debug.WriteLine("Finish: " + sw.ElapsedMilliseconds);
                 sw.Restart();
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
+        private HSDStruct GetPreviousStruct(HSDStruct str)
+        {
+            for(int i = 0; i < _structCache.Count - 1; i++)
+            {
+                if (_structCache[i + 1] == str)
+                    return _structCache[i];
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="item"></param>
+        /// <returns></returns>
         public static int BinarySearch(List<int> a, int item)
         {
             if (a.Count == 0)
@@ -669,6 +751,61 @@ namespace HSDRaw
         }
 
 
+        private static Func<string, HSDAccessor>[] symbol_identificators = new Func<string, HSDAccessor>[]
+        {
+                x => x.EndsWith("shapeanim_joint") ? new HSDAccessor() : null,
+                x => x.EndsWith("matanim_joint") ? new HSD_MatAnimJoint() : null,
+                x => x.EndsWith("_joint") ?  new HSD_JOBJ() : null,
+                x => x.EndsWith("_animjoint") ?  new HSD_AnimJoint() : null,
+                x => x.EndsWith("_texanim") ?  new HSD_TexAnim() : null,
+                x => x.EndsWith("_figatree") ?  new HSD_FigaTree() : null,
+                x => x.EndsWith("_scene_models") ||
+                    x.Equals("Stc_rarwmdls") ||
+                    x.Equals("Stc_scemdls") ||
+                    x.Equals("lupe") ||
+                    x.Equals("tdsce") ?  new HSDNullPointerArrayAccessor<HSD_JOBJDesc>() : null,
+                x => x.StartsWith("ftData") && !x.Contains("Copy") ?  new SBM_FighterData() : null,
+                x => x.EndsWith("MnSelectChrDataTable") ?  new SBM_SelectChrDataTable() : null,
+                x => x.EndsWith("MnSelectStageDataTable") ?  new SBM_MnSelectStageDataTable() : null,
+                x => x.EndsWith("coll_data") ?  new SBM_Coll_Data() : null,
+                x => x.EndsWith("scene_data") ||
+                    x.Equals("pnlsce") ||
+                    x.Equals("flmsce") ||
+                    x.StartsWith("Sc") ?  new HSD_SOBJ() : null,
+                x => x.StartsWith("map_plit") ?  new HSDNullPointerArrayAccessor<HSD_Light>() : null,
+                x => x.StartsWith("map_head") ?  new SBM_Map_Head() : null,
+                x => x.StartsWith("grGroundParam") ?  new SBM_GroundParam() : null,
+                x => x.StartsWith("vcDataStar") ?  new KAR_vcDataStar() : null,
+                x => x.StartsWith("vcDataWheel") ?  new KAR_vcDataWheel() : null,
+                x => x.StartsWith("grModelMotion") ?  new KAR_grModelMotion() : null,
+                x => x.StartsWith("grModel") ?  new KAR_grModel() : null,
+                x => x.StartsWith("grData") ?  new KAR_grData() : null,
+                x => x.EndsWith("_texg") ?  new HSD_TEXGraphicBank() : null,
+                x => x.EndsWith("_ptcl") ?  new HSD_ParticleGroup() : null,
+                x => x.StartsWith("effBehaviorTable") ?  new MEX_EffectTypeLookup() : null,
+                x => x.StartsWith("eff") ?  new SBM_EffectTable() : null,
+                x => x.StartsWith("itPublicData") ?  new itPublicData() : null,
+                x => x.StartsWith("itemdata") ?  new HSDNullPointerArrayAccessor<SBM_MapItem>() : null,
+                x => x.StartsWith("smSoundTestLoadData") ?  new smSoundTestLoadData() : null,
+                x => x.StartsWith("ftLoadCommonData") ?  new ftLoadCommonData() : null,
+                x => x.StartsWith("quake_model_set") ?  new SBM_Quake_Model_Set() : null,
+                x => x.StartsWith("mexData") ?  new MEX_Data() : null,
+                x => x.StartsWith("mexMapData") ?  new MEX_mexMapData() : null,
+                x => x.StartsWith("mexSelectChr") ?  new MEX_mexSelectChr() : null,
+                x => x.StartsWith("mobj") ?  new HSD_MOBJ() : null,
+                x => x.StartsWith("SIS_") ?  new SBM_SISData() : null,
+                x => x.Equals("lbBgFlashColAnimData") ?  new HSDArrayAccessor<ftCommonColorEffect>() : null,
+                x => x.Equals("ftcmd") ?  new SBM_FighterCommandTable() : null,
+                x => x.Equals("Stc_icns") ?  new MEX_Stock() : null,
+                x => x.Equals("mexMenu") ?  new MEX_Menu() : null,
+                x => x.Equals("bgm") ?  new MEX_BGMModel() : null,
+                x => x.Equals("evMenu") ?  new SBM_TM_EventMenu() : null,
+                x => x.Equals("labData") ?  new SBM_TM_LabData() : null,
+                x => new HSDAccessor(),
+        };
+
+        private static Func<string, HSDAccessor> @symbol_switch = symbol_identificators.Aggregate((x, y) => z => x(z) ?? y(z));
+
         /// <summary>
         /// Attempts to guess the structure type based on the root name
         /// </summary>
@@ -677,310 +814,9 @@ namespace HSDRaw
         /// <returns></returns>
         private HSDAccessor GuessAccessor(string rootString, HSDStruct str)
         {
-            HSDAccessor a = new HSDAccessor()
-            {
-                _s = str
-            };
-            if (rootString.EndsWith("shapeanim_joint"))
-            {
-                var acc = new HSDAccessor();
-                acc._s = str;
-                a = acc;
-            }
-            else
-            if (rootString.EndsWith("matanim_joint"))
-            {
-                var acc = new HSD_MatAnimJoint();
-                acc._s = str;
-                a = acc;
-            }
-            else
-            if (rootString.EndsWith("_joint"))
-            {
-                var jobj = new HSD_JOBJ();
-                jobj._s = str;
-                a = jobj;
-            }
-            else
-            if (rootString.EndsWith("_animjoint"))
-            {
-                var jobj = new HSD_AnimJoint();
-                jobj._s = str;
-                a = jobj;
-            }
-            else
-            if (rootString.EndsWith("_texanim"))
-            {
-                var jobj = new HSD_TexAnim();
-                jobj._s = str;
-                a = jobj;
-            }
-            else
-            if (rootString.EndsWith("_figatree"))
-            {
-                var jobj = new HSD_FigaTree();
-                jobj._s = str;
-                a = jobj;
-            }
-            else
-            if (rootString.EndsWith("_scene_models") ||
-                rootString.Equals("Stc_rarwmdls") ||
-                rootString.Equals("Stc_scemdls") ||
-                rootString.Equals("lupe") ||
-                rootString.Equals("tdsce"))
-            {
-                var jobj = new HSDNullPointerArrayAccessor<HSD_JOBJDesc>();
-                jobj._s = str;
-                a = jobj;
-            }
-            else
-            if (rootString.StartsWith("ftData") && !rootString.Contains("Copy"))
-            {
-                var acc = new SBM_FighterData();
-                acc._s = str;
-                a = acc;
-            }
-            else
-            if (rootString.EndsWith("MnSelectChrDataTable"))
-            {
-                var acc = new SBM_SelectChrDataTable();
-                acc._s = str;
-                a = acc;
-            }
-            else
-            if (rootString.EndsWith("MnSelectStageDataTable"))
-            {
-                var acc = new SBM_MnSelectStageDataTable();
-                acc._s = str;
-                a = acc;
-            }
-            else
-            if (rootString.EndsWith("coll_data"))
-            {
-                var acc = new SBM_Coll_Data();
-                acc._s = str;
-                a = acc;
-            }
-            else
-            if (rootString.EndsWith("scene_data") ||
-                rootString.Equals("pnlsce") ||
-                rootString.Equals("flmsce") ||
-                (rootString.StartsWith("Sc") && str.Length == 0x10))
-            {
-                var acc = new HSD_SOBJ();
-                acc._s = str;
-                a = acc;
-            }
-            else
-            if (rootString.StartsWith("map_plit"))
-            {
-                var acc = new HSDNullPointerArrayAccessor<HSD_Light>();
-                acc._s = str;
-                a = acc;
-            }
-            /*else
-            if (rootString.StartsWith("grGroundParam"))
-            {
-                var acc = new SBM_GroundParam();
-                acc._s = str;
-                a = acc;
-            }*/
-            else
-            if (rootString.StartsWith("map_head"))
-            {
-                var acc = new SBM_Map_Head();
-                acc._s = str;
-                a = acc;
-            }
-            else
-            if (rootString.StartsWith("grGroundParam"))
-            {
-                var acc = new SBM_GroundParam();
-                acc._s = str;
-                a = acc;
-            }
-            else
-            if (rootString.StartsWith("vcDataStar"))
-            {
-                var acc = new KAR_vcDataStar();
-                acc._s = str;
-                a = acc;
-            }
-            else
-            if (rootString.StartsWith("vcDataWheel"))
-            {
-                var acc = new KAR_vcDataWheel();
-                acc._s = str;
-                a = acc;
-            }
-            else
-            if (rootString.StartsWith("grModelMotion"))
-            {
-                var acc = new KAR_grModelMotion();
-                acc._s = str;
-                a = acc;
-            }
-            else
-            if (rootString.StartsWith("grModel"))
-            {
-                var acc = new KAR_grModel();
-                acc._s = str;
-                a = acc;
-            }
-            else
-            if (rootString.StartsWith("grData"))
-            {
-                var acc = new KAR_grData();
-                acc._s = str;
-                a = acc;
-            }
-            else
-            if (rootString.EndsWith("_texg"))
-            {
-                var acc = new HSD_TEXGraphicBank();
-                acc._s = str;
-                a = acc;
-            }
-            else
-            if (rootString.EndsWith("_ptcl"))
-            {
-                var acc = new HSD_ParticleGroup();
-                acc._s = str;
-                a = acc;
-            }
-            else
-            if (rootString.StartsWith("effBehaviorTable"))
-            {
-                var acc = new MEX_EffectTypeLookup();
-                acc._s = str;
-                a = acc;
-            }
-            else
-            if (rootString.StartsWith("eff"))
-            {
-                var acc = new SBM_EffectTable();
-                acc._s = str;
-                a = acc;
-            }
-            else
-            if (rootString.StartsWith("itPublicData"))
-            {
-                var acc = new itPublicData();
-                acc._s = str;
-                a = acc;
-            }
-            else
-            if (rootString.StartsWith("itemdata"))
-            {
-                var acc = new HSDNullPointerArrayAccessor<SBM_MapItem>();
-                acc._s = str;
-                a = acc;
-            }
-            if (rootString.StartsWith("smSoundTestLoadData"))
-            {
-                var acc = new smSoundTestLoadData();
-                acc._s = str;
-                a = acc;
-            }
-            else
-            if (rootString.StartsWith("ftLoadCommonData"))
-            {
-                var acc = new ftLoadCommonData();
-                acc._s = str;
-                a = acc;
-            }
-            else
-            if (rootString.StartsWith("quake_model_set"))
-            {
-                var acc = new SBM_Quake_Model_Set();
-                acc._s = str;
-                a = acc;
-            }
-            else
-            if (rootString.StartsWith("mexData"))
-            {
-                var acc = new MEX_Data();
-                acc._s = str;
-                a = acc;
-            }
-            else
-            if (rootString.StartsWith("mexMapData"))
-            {
-                var acc = new MEX_mexMapData();
-                acc._s = str;
-                a = acc;
-            }
-            else
-            if (rootString.StartsWith("mexSelectChr"))
-            {
-                var acc = new MEX_mexSelectChr();
-                acc._s = str;
-                a = acc;
-            }
-            else
-            if (rootString.StartsWith("mobj"))
-            {
-                var acc = new HSD_MOBJ();
-                acc._s = str;
-                a = acc;
-            }
-            else
-            if (rootString.StartsWith("SIS_"))
-            {
-                var acc = new SBM_SISData();
-                acc._s = str;
-                a = acc;
-            }
-            else
-            if (rootString.Equals("evMenu"))
-            {
-                var acc = new SBM_TM_EventMenu();
-                acc._s = str;
-                a = acc;
-            }
-            else
-            if (rootString.Equals("labData"))
-            {
-                var acc = new SBM_TM_LabData();
-                acc._s = str;
-                a = acc;
-            }
-            if (rootString.Equals("importData"))
-            {
-                var acc = new SBM_TM_ImportData();
-                acc._s = str;
-                a = acc;
-            }
-            else
-            if (rootString.Equals("lbBgFlashColAnimData"))
-            {
-                var acc = new HSDArrayAccessor<ftCommonColorEffect>();
-                acc._s = str;
-                a = acc;
-            }
-            else
-            if (rootString.Equals("ftcmd"))
-            {
-                var acc = new SBM_FighterCommandTable();
-                acc._s = str;
-                a = acc;
-            }
-            else
-            if (rootString.Equals("Stc_icns"))
-            {
-                var acc = new MEX_Stock();
-                acc._s = str;
-                a = acc;
-            }
-            else
-            if (rootString.Equals("mexMenu"))
-            {
-                var acc = new MEX_Menu();
-                acc._s = str;
-                a = acc;
-            }
-
-            return a;
+            HSDAccessor acc = @symbol_switch(rootString);
+            acc._s = str;
+            return acc;
         }
     }
 }
