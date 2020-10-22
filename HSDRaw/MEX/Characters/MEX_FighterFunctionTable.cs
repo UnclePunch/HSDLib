@@ -99,5 +99,11 @@ namespace HSDRaw.MEX
 
         public HSDArrayAccessor<HSD_UInt> onSmashDown { get => _s.GetReference<HSDArrayAccessor<HSD_UInt>>(0x94); set => _s.SetReference(0x94, value); }
 
+        public HSDArrayAccessor<HSD_UInt> onExtRstAnim { get => _s.GetReference<HSDArrayAccessor<HSD_UInt>>(0x98); set => _s.SetReference(0x98, value); }
+
+        public HSDArrayAccessor<HSD_UInt> onIndexExtResultAnim { get => _s.GetReference<HSDArrayAccessor<HSD_UInt>>(0x9C); set => _s.SetReference(0x9C, value); }
+
+        public HSDArrayAccessor<HSD_UInt> DemoMoveLogic { get => _s.GetReference<HSDArrayAccessor<HSD_UInt>>(0xA0); set => _s.SetReference(0xA0, value); }
+
     }
 }
