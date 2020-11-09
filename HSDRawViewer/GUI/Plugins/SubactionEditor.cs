@@ -20,6 +20,7 @@ using HSDRawViewer.Rendering.Renderers;
 using System.ComponentModel;
 using HSDRaw.Melee.Cmd;
 using System.IO;
+using System.Text.RegularExpressions;
 
 namespace HSDRawViewer.GUI
 {
@@ -29,8 +30,10 @@ namespace HSDRawViewer.GUI
         {
             public HSDStruct _struct;
 
+            public string DisplayText;
+
             [Category("Animation"), DisplayName("Figatree Symbol")]
-            public string Text { get; set; }
+            public string Symbol { get; set; }
 
             [Category("Animation"), DisplayName("Figatree Offset")]
             public int AnimOffset { get; set; }
@@ -58,7 +61,7 @@ namespace HSDRawViewer.GUI
 
             public override string ToString()
             {
-                return System.Text.RegularExpressions.Regex.Replace(Text.Replace("_figatree", ""), @"Ply.*_Share_ACTION_", "");
+                return DisplayText == null ? "NULL" : DisplayText;
             }
         }
 
@@ -92,44 +95,43 @@ namespace HSDRawViewer.GUI
                     return sa.Name;
                 }
             }
-            
-            public IEnumerable<string> Parameters
+
+            public IEnumerable<string> GetParamsAsString(SubactionEditor editor)
             {
-                get
+                var sa = SubactionManager.GetSubaction(data[0], SubactionGroup);
+
+                StringBuilder sb = new StringBuilder();
+
+                var dparams = sa.GetParameters(data);
+
+                for (int i = 0; i < sa.Parameters.Length; i++)
                 {
-                    var sa = SubactionManager.GetSubaction(data[0], SubactionGroup);
+                    var param = sa.Parameters[i];
 
-                    StringBuilder sb = new StringBuilder();
+                    if (param.Name.Contains("None"))
+                        continue;
 
-                    var dparams = sa.GetParameters(data);
+                    var value = param.IsPointer ? 0 : dparams[i];
 
-                    for (int i = 0; i < sa.Parameters.Length; i++)
-                    {
-                        var param = sa.Parameters[i];
-
-                        if (param.Name.Contains("None"))
-                            continue;
-
-                        var value = param.IsPointer ? 0 : dparams[i];
-
-                        if (param.HasEnums && value < param.Enums.Length)
-                            yield return (param.Name +
-                                " : " +
-                                param.Enums[value]);
+                    if (param.HasEnums && value < param.Enums.Length)
+                        yield return (param.Name +
+                            " : " +
+                            param.Enums[value]);
+                    else
+                    if (param.IsPointer)
+                        if (editor != null && editor.AllScripts.Find(e => e._struct == Reference) != null)
+                            yield return ("&" + editor.AllScripts.Find(e => e._struct == Reference).DisplayText);
                         else
-                        if (param.IsPointer)
                             yield return ("POINTER->(Edit To View)");
-                        else
-                        if (param.IsFloat)
-                            yield return (param.Name +
-                                " : " +
-                                BitConverter.ToSingle(BitConverter.GetBytes(value), 0));
-                        else
-                            yield return (param.Name + 
-                                " : " + 
-                                (param.Hex ? value.ToString("X") : value.ToString()));
-                        
-                    }
+                    else
+                    if (param.IsFloat)
+                        yield return (param.Name +
+                            " : " +
+                            BitConverter.ToSingle(BitConverter.GetBytes(value), 0));
+                    else
+                        yield return (param.Name +
+                            " : " +
+                            (param.Hex ? "0x" + value.ToString("X") : value.ToString()));
                 }
             }
 
@@ -144,8 +146,17 @@ namespace HSDRawViewer.GUI
 
             public override string ToString()
             {
-                var sa = SubactionManager.GetSubaction(data[0], SubactionGroup);
-                return Name +  "(" + string.Join(", ", Parameters) + ")";
+                return Name +  "(" + string.Join(", ", GetParamsAsString(null)) + ")";
+            }
+
+            public string Serialize(SubactionEditor editor)
+            {
+                return Name + "(" + string.Join(", ", GetParamsAsString(editor)) + ")";
+            }
+
+            public static void Deserialize(string script)
+            {
+                // TODO:
             }
         }
 
@@ -280,18 +291,18 @@ namespace HSDRawViewer.GUI
                     continue;
 
                 if (!aHash.Contains(v.SubAction._s))
-                {
                     aHash.Add(v.SubAction._s);
-                    AllScripts.Add(new Action()
-                    {
-                        _struct = v.SubAction._s,
-                        AnimOffset = v.AnimationOffset,
-                        AnimSize = v.AnimationSize,
-                        Flags = v.Flags,
-                        Index = Index,
-                        Text = v.Name == null ? "Func_" + Index.ToString("X") : v.Name
-                    });
-                }
+
+                AllScripts.Add(new Action()
+                {
+                    _struct = v.SubAction._s,
+                    AnimOffset = v.AnimationOffset,
+                    AnimSize = v.AnimationSize,
+                    Flags = v.Flags,
+                    Index = Index,
+                    Symbol = v.Name,
+                    DisplayText = v.Name == null ? "Func_" + Index.ToString("X") : Regex.Replace(v.Name.Replace("_figatree", ""), @"Ply.*_Share_ACTION_", "")
+                });
 
                 foreach (var c in v.SubAction._s.References)
                 {
@@ -313,7 +324,7 @@ namespace HSDRawViewer.GUI
                     AllScripts.Add(new Action()
                     {
                         _struct = v,
-                        Text = "Subroutine_" + Index.ToString("X")
+                        DisplayText = "Subroutine_" + Index.ToString("X")
                     });
                 }
                 foreach (var r in v.References)
@@ -489,6 +500,8 @@ namespace HSDRawViewer.GUI
                 AddActionToUndo();
 
                 a._struct.References.Clear();
+                _node.Accessor._s.SetInt32(0x18 * a.Index + 0x04, (int)a.AnimOffset);
+                _node.Accessor._s.SetInt32(0x18 * a.Index + 0x08, (int)a.AnimSize);
                 _node.Accessor._s.SetInt32(0x18 * a.Index + 0x10, (int)a.Flags);
 
                 List<byte> scriptData = new List<byte>();
@@ -545,7 +558,8 @@ namespace HSDRawViewer.GUI
             var data = new byte[] { 0x18, 0, 0, 0 };
             var action = new Action()
             {
-                Text = "Custom_" + AllScripts.Count,
+                Symbol = "Custom_" + AllScripts.Count,
+                DisplayText = "Custom_" + AllScripts.Count,
                 _struct = new HSDStruct(data)
             };
             AllScripts.Insert(actionList.SelectedIndex, action);
@@ -553,6 +567,19 @@ namespace HSDRawViewer.GUI
             actionList.SelectedItem = action;
         }
         
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void deleteSelectedActionToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if(actionList.SelectedIndex != -1)
+            {
+                AllScripts.RemoveAt(actionList.SelectedIndex);
+                RefreshActionList();
+            }
+        }
         
         /// <summary>
         /// 
@@ -697,7 +724,7 @@ namespace HSDRawViewer.GUI
         {
             if(e.Index != -1 && subActionList.Items[e.Index] is SubActionScript script)
             {
-                var length = script.Parameters.Count();
+                var length = script.GetParamsAsString(null).Count();
                 e.ItemHeight = subActionList.Font.Height * (toolStripComboBox1.SelectedIndex != 0 ? 1 : length + 1);
                 e.ItemHeight = Math.Min(e.ItemHeight, 255); // limit
             }
@@ -716,10 +743,10 @@ namespace HSDRawViewer.GUI
                 if(subActionList.Items[e.Index] is SubActionScript script)
                 {
                     var sa = SubactionManager.GetSubaction(script.data[0], SubactionGroup);
-                    e.Graphics.DrawString(e.Index + ". " + script.Name + (toolStripComboBox1.SelectedIndex == 2 ? "(" + string.Join(", ", script.Parameters) + ")" : ""), e.Font, new SolidBrush(sa.IsCustom ? Color.DarkOrange : Color.DarkBlue), e.Bounds);
+                    e.Graphics.DrawString(e.Index + ". " + script.Name + (toolStripComboBox1.SelectedIndex == 2 ? "(" + string.Join(", ", script.GetParamsAsString(null)) + ")" : ""), e.Font, new SolidBrush(sa.IsCustom ? Color.DarkOrange : Color.DarkBlue), e.Bounds);
                     int i = 1;
                     if (toolStripComboBox1.SelectedIndex == 0)
-                        foreach (var v in script.Parameters)
+                        foreach (var v in script.GetParamsAsString(null))
                         {
                             if (e.Bounds.Y + e.Font.Height * i >= e.Bounds.Y + e.Bounds.Height)
                                 break;
@@ -1062,12 +1089,12 @@ namespace HSDRawViewer.GUI
             }
 
             var modelFile = new HSDRawFile(cFile);
-            if (modelFile.Roots[0].Data is HSD_JOBJ jobj)
+            if (modelFile.Roots.Count > 0 && modelFile.Roots[0].Data is HSD_JOBJ jobj)
                 JOBJManager.SetJOBJ(jobj);
             else
                 return;
 
-            if (modelFile.Roots[1].Data is HSD_MatAnimJoint matanim)
+            if (modelFile.Roots.Count > 1 && modelFile.Roots[1].Data is HSD_MatAnimJoint matanim)
             {
                 JOBJManager.SetMatAnimJoint(matanim);
                 JOBJManager.EnableMaterialFrame = true;
@@ -1407,7 +1434,7 @@ namespace HSDRawViewer.GUI
             var anim = new HSDRawFile(f);
             if(anim.Roots[0].Data is HSD_FigaTree tree)
             {
-                var name = new Action() { Text = anim.Roots[0].Name }.ToString();
+                var name = new Action() { Symbol = anim.Roots[0].Name }.ToString();
 
                 JOBJManager.SetFigaTree(tree);
                 viewport.MaxFrame = tree.FrameCount;
@@ -1423,7 +1450,7 @@ namespace HSDRawViewer.GUI
                     Action throwAction = null;
                     foreach (Action a in actionList.Items)
                     {
-                        if(a.Text.Contains("Taro") && a.Text.Contains(name) && !a.Text.Equals(anim.Roots[0].Name))
+                        if(a.Symbol.Contains("Taro") && a.Symbol.Contains(name) && !a.Symbol.Equals(anim.Roots[0].Name))
                         {
                             throwAction = a;
                             break;
@@ -1524,7 +1551,7 @@ namespace HSDRawViewer.GUI
 
                 var itemText = ((ListBox)sender).Items[e.Index].ToString();
 
-                if (!itemText.StartsWith("Subroutine"))
+                if (!itemText.StartsWith("Subroutine") && !itemText.StartsWith("Custom"))
                 {
                     var indText = e.Index.ToString() + ".";
 
@@ -1562,15 +1589,49 @@ namespace HSDRawViewer.GUI
                 using (StreamWriter w = new StreamWriter(stream))
                     foreach (var v in AllScripts)
                     {
-                        w.WriteLine("Symbol = " + v.Text);
-                        w.WriteLine("Flags = " + v.Flags.ToString("X"));
+                        w.WriteLine($"[Symbol = \"{v.Symbol}\"]");
+                        w.WriteLine($"[AnimOffset = 0x{v.AnimOffset}]");
+                        w.WriteLine($"[AnimSize = 0x{v.AnimSize}]");
+                        w.WriteLine($"[Flags = 0x{v.Flags.ToString("X")}]");
 
                         var scripts = GetScripts(v);
+                        w.WriteLine(v.DisplayText + "()");
                         w.WriteLine("{");
                         foreach (var s in scripts)
-                            w.WriteLine("\t" + s.ToString());
+                            w.WriteLine($"\t{s.Serialize(this)};");
                         w.WriteLine("}");
                     }
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void importFromTextToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            var f = FileIO.OpenFile("Text File (*.txt)|*.txt");
+
+            if (f != null)
+            {
+                using (FileStream stream = new FileStream(f, FileMode.Create))
+                using (StreamReader w = new StreamReader(stream))
+                {
+                    var script = new Action();
+                    while(!w.EndOfStream)
+                    {
+                        var line = w.ReadLine();
+                        
+                        // process attribute
+
+
+
+
+                        // process script
+
+                    }
+                }
             }
         }
     }
