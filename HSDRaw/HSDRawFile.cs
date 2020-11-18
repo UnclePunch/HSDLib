@@ -794,7 +794,6 @@ namespace HSDRaw
                 x => x.StartsWith("mexSelectChr") ?  new MEX_mexSelectChr() : null,
                 x => x.StartsWith("mobj") ?  new HSD_MOBJ() : null,
                 x => x.StartsWith("SIS_") ?  new SBM_SISData() : null,
-                x => x.Equals("evMenu") ?  new SBM_EventMenu() : null,
                 x => x.Equals("lbBgFlashColAnimData") ?  new HSDArrayAccessor<ftCommonColorEffect>() : null,
                 x => x.Equals("ftcmd") ?  new SBM_FighterCommandTable() : null,
                 x => x.Equals("Stc_icns") ?  new MEX_Stock() : null,

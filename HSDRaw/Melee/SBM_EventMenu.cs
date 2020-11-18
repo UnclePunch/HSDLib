@@ -6,7 +6,7 @@ using System.Text;
 
 namespace HSDRaw.Melee
 {
-    public class SBM_EventMenu : HSDAccessor
+    public class SBM_TM_EventMenu : HSDAccessor
     {
         public HSD_JOBJ MainMenu { get => _s.GetReference<HSD_JOBJ>(0x00); set => _s.SetReference(0x00, value); }
         public HSD_JOBJ SubMenu { get => _s.GetReference<HSD_JOBJ>(0x04); set => _s.SetReference(0x04, value); }
