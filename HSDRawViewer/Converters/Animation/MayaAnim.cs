@@ -132,8 +132,8 @@ namespace HSDRawViewer.Converters
 
                         prevState = state;
 
-                        animkey.t1 = (float)Math.Atan(MathHelper.RadiansToDegrees(animkey.t1));
-                        animkey.t2 = (float)Math.Atan(MathHelper.RadiansToDegrees(animkey.t2));
+                        animkey.t1 = (float)MathHelper.RadiansToDegrees(Math.Atan(animkey.t1));
+                        animkey.t2 = (float)MathHelper.RadiansToDegrees(Math.Atan(animkey.t2));
                         
                         if (mtrack.IsAngular() && !MayaSettings.UseRadians)
                         {
@@ -318,6 +318,7 @@ namespace HSDRawViewer.Converters
             rotateX,
             rotateY,
             rotateZ,
+            rotateW,
             scaleX,
             scaleY,
             scaleZ,
@@ -378,6 +379,7 @@ namespace HSDRawViewer.Converters
                         case TrackType.rotateX:
                         case TrackType.rotateY:
                         case TrackType.rotateZ:
+                        case TrackType.rotateW:
                             controlType = ControlType.rotate;
                             break;
                         case TrackType.scaleX:
@@ -483,7 +485,7 @@ namespace HSDRawViewer.Converters
                             currentData = new MayaTrack();
                             if (args.Length == 7)
                             {
-                                currentData.controlType = (ControlType)Enum.Parse(typeof(ControlType), args[1].Split('.')[0]);
+                                //currentData.controlType = (ControlType)Enum.Parse(typeof(ControlType), args[1].Split('.')[0]);
                                 currentData.type = (TrackType)Enum.Parse(typeof(TrackType), args[2]);
                                 currentNode.atts.Add(currentData);
                             }
