@@ -45,4 +45,11 @@ namespace HSDRaw.Melee
         public HSDNullPointerArrayAccessor<HSD_MatAnimJoint> hud_matanimjoint { get => _s.GetReference<HSDNullPointerArrayAccessor<HSD_MatAnimJoint>>(0x04); set => _s.SetReference(0x04, value); }
     }
 
+    public class SBM_TM_LedgedashData : HSDAccessor
+    {
+        public HSD_JOBJ hud_joint { get => _s.GetReference<HSD_JOBJ>(0x00); set => _s.SetReference(0x00, value); }
+        public HSDNullPointerArrayAccessor<HSD_MatAnimJoint> hud_matanimjoint { get => _s.GetReference<HSDNullPointerArrayAccessor<HSD_MatAnimJoint>>(0x04); set => _s.SetReference(0x04, value); }
+    }
+
+
 }

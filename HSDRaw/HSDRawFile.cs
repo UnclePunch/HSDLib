@@ -801,7 +801,9 @@ namespace HSDRaw
                 x => x.Equals("bgm") ?  new MEX_BGMModel() : null,
                 x => x.Equals("evMenu") ?  new SBM_TM_EventMenu() : null,
                 x => x.Equals("labData") ?  new SBM_TM_LabData() : null,
+                x => x.Equals("importData") ?  new SBM_TM_ImportData() : null, 
                 x => x.Equals("lclData") ?  new SBM_TM_LCancelData() : null,
+                x => x.Equals("ldshData") ?  new SBM_TM_LedgedashData() : null,
                 x => new HSDAccessor(),
         };
 
