@@ -801,6 +801,7 @@ namespace HSDRaw
                 x => x.Equals("bgm") ?  new MEX_BGMModel() : null,
                 x => x.Equals("evMenu") ?  new SBM_TM_EventMenu() : null,
                 x => x.Equals("labData") ?  new SBM_TM_LabData() : null,
+                x => x.StartsWith("mnName") ?  new HSDFixedLengthPointerArrayAccessor<HSD_ShiftJIS_String>() : null,
                 x => new HSDAccessor(),
         };
 
