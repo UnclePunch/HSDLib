@@ -36,6 +36,7 @@ namespace HSDRaw.Melee
     {
         public HSD_JOBJ button_joint { get => _s.GetReference<HSD_JOBJ>(0x00); set => _s.SetReference(0x00, value); }
         public HSD_JOBJ menu_joint { get => _s.GetReference<HSD_JOBJ>(0x04); set => _s.SetReference(0x04, value); }
+        public HSD_Camera import_cam { get => _s.GetReference<HSD_Camera>(0x08); set => _s.SetReference(0x08, value); }
 
     }
 
