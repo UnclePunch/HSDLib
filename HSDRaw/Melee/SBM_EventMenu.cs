@@ -37,6 +37,7 @@ namespace HSDRaw.Melee
         public HSD_JOBJ button_joint { get => _s.GetReference<HSD_JOBJ>(0x00); set => _s.SetReference(0x00, value); }
         public HSD_JOBJ menu_joint { get => _s.GetReference<HSD_JOBJ>(0x04); set => _s.SetReference(0x04, value); }
         public HSD_Camera import_cam { get => _s.GetReference<HSD_Camera>(0x08); set => _s.SetReference(0x08, value); }
+        public HSD_JOBJ popup_joint { get => _s.GetReference<HSD_JOBJ>(0x0C); set => _s.SetReference(0x0C, value); }
 
     }
 
@@ -52,5 +53,13 @@ namespace HSDRaw.Melee
         public HSDNullPointerArrayAccessor<HSD_MatAnimJoint> hud_matanimjoint { get => _s.GetReference<HSDNullPointerArrayAccessor<HSD_MatAnimJoint>>(0x04); set => _s.SetReference(0x04, value); }
     }
 
+    public class SBM_TM_WavedashhData : HSDAccessor
+    {
+        public HSD_JOBJ hud_joint { get => _s.GetReference<HSD_JOBJ>(0x00); set => _s.SetReference(0x00, value); }
+        public HSDNullPointerArrayAccessor<HSD_MatAnimJoint> hud_matanimjoint { get => _s.GetReference<HSDNullPointerArrayAccessor<HSD_MatAnimJoint>>(0x04); set => _s.SetReference(0x04, value); }
+        public HSD_JOBJ target_joint { get => _s.GetReference<HSD_JOBJ>(0x08); set => _s.SetReference(0x08, value); }
+        public HSDNullPointerArrayAccessor<HSD_AnimJoint> target_jointanim { get => _s.GetReference<HSDNullPointerArrayAccessor<HSD_AnimJoint>>(0x0C); set => _s.SetReference(0x0C, value); }
+        public HSDNullPointerArrayAccessor<HSD_MatAnimJoint> target_matanim { get => _s.GetReference<HSDNullPointerArrayAccessor<HSD_MatAnimJoint>>(0x10); set => _s.SetReference(0x10, value); }
 
+    }
 }

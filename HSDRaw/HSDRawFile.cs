@@ -804,6 +804,7 @@ namespace HSDRaw
                 x => x.Equals("importData") ?  new SBM_TM_ImportData() : null, 
                 x => x.Equals("lclData") ?  new SBM_TM_LCancelData() : null,
                 x => x.Equals("ldshData") ?  new SBM_TM_LedgedashData() : null,
+                x => x.Equals("wdshData") ?  new SBM_TM_WavedashhData() : null,
                 x => new HSDAccessor(),
         };
 
