@@ -36,6 +36,8 @@ namespace HSDRawViewer.Converters
         public bool ExportScaledUVs { get => ModelExporter.ScaleUVs; set => ModelExporter.ScaleUVs = value; }
 
         public bool ExportTextureInfo { get; set; } = true;
+
+        public bool BlenderExportMode { get; set; } = false;
     }
 
     /// <summary>
@@ -88,7 +90,8 @@ namespace HSDRawViewer.Converters
                 FlipUVs = settings.FlipUVs,
                 Optimize = settings.Optimize,
                 FlipWindingOrder = true,
-                ExportTextureInfo = settings.ExportTextureInfo
+                ExportTextureInfo = settings.ExportTextureInfo,
+                BlenderMode = settings.BlenderExportMode
             };
 
             IOManager.ExportScene(exp.Scene, filePath, exportsettings);
@@ -187,7 +190,7 @@ namespace HSDRawViewer.Converters
                     {
                         // create mesh
                         IOMesh mesh = new IOMesh();
-                        mesh.Name = $"JOBJ_{jIndex}_DOBJ_{dIndex}";
+                        mesh.Name = $"Joint_{jIndex}_Object_{dIndex}";
 
                         bool reflective = false;
                         var single = j != _root;
@@ -197,7 +200,7 @@ namespace HSDRawViewer.Converters
 
                         // process and export material
                         IOMaterial m = new IOMaterial();
-                        m.Name = $"JOBJ_{jIndex}_DOBJ_{dIndex}_MOBJ_{dIndex}";
+                        m.Name = $"Joint_{jIndex}_Object_{dIndex}_Material_{dIndex}";
                         m.Shininess = dobj.Mobj.Material.Shininess;
                         m.Alpha = dobj.Mobj.Material.Alpha;
 
@@ -208,7 +211,7 @@ namespace HSDRawViewer.Converters
                             {
                                 if (t.ImageData != null && t.ImageData.ImageData != null && !imageToName.ContainsKey(t.ImageData.ImageData))
                                 {
-                                    var name = $"TOBJ_{imageToName.Count}";
+                                    var name = $"Texture_{imageToName.Count}";
                                     using (Bitmap img = TOBJConverter.ToBitmap(t))
                                         img.Save(_settings.Directory + name + ".png");
                                     imageToName.Add(t.ImageData.ImageData, name);
@@ -460,7 +463,7 @@ namespace HSDRawViewer.Converters
         /// <returns></returns>
         private static Vector3 ProcessUVTransform(GXVector2 gvVec, HSD_MOBJ mobj, int texIndex)
         {
-            if (mobj == null || mobj.Textures == null)
+            if (mobj == null || mobj.Textures == null || texIndex >= mobj.Textures.List.Count)
                 return new Vector3(gvVec.X, gvVec.Y, 1);
 
             var tex = mobj.Textures.List[texIndex];

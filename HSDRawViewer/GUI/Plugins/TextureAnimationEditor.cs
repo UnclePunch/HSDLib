@@ -12,6 +12,7 @@ using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using WeifenLuo.WinFormsUI.Docking;
 using HSDRaw.GX;
+using Chadsoft.CTools.Image;
 
 namespace HSDRawViewer.GUI.Plugins
 {
@@ -166,7 +167,7 @@ namespace HSDRawViewer.GUI.Plugins
         {
             var id = TextureManager.TextureCount;
             TextureManager.Add(data, width, height);
-            var image = Tools.BitmapTools.RgbaToImage(data, width, height);
+            var image = Tools.BitmapTools.BGRAToBitmap(data, width, height);
             BitmapList.Images.Add(image);
             textureList.Items.Add(new ListViewItem() { ImageIndex = id, Text = "Image_" + id });
         }
@@ -265,7 +266,7 @@ namespace HSDRawViewer.GUI.Plugins
                     buf.Data = tobj.ImageData;
                     imgs.Add(buf);
 
-                    if (TPLConv.IsPalettedFormat(tobj.ImageData.Format))
+                    if (ImageDataFormat.IsPalettedFormat(tobj.ImageData.Format))
                     {
                         HSD_TlutBuffer palbuf = new HSD_TlutBuffer();
                         palbuf.Data = tobj.TlutData;
@@ -279,7 +280,7 @@ namespace HSDRawViewer.GUI.Plugins
 
                 TexAnim.ImageBuffers = ib;
 
-                if (tobjs.Length > 0 && TPLConv.IsPalettedFormat(tobjs[0].ImageData.Format))
+                if (tobjs.Length > 0 && ImageDataFormat.IsPalettedFormat(tobjs[0].ImageData.Format))
                 {
                     var tb = new HSDRaw.HSDArrayAccessor<HSD_TlutBuffer>();
                     tb.Array = pals.ToArray();
@@ -623,7 +624,7 @@ namespace HSDRawViewer.GUI.Plugins
                 var i = 0;
                 foreach(var tobj in GetTOBJs())
                 {
-                    var frame = Tools.BitmapTools.RgbaToImage(tobj.GetDecodedImageData(), tobj.ImageData.Width, tobj.ImageData.Height);
+                    var frame = Tools.BitmapTools.BGRAToBitmap(tobj.GetDecodedImageData(), tobj.ImageData.Width, tobj.ImageData.Height);
                     frame.Save(Path.GetDirectoryName(f) + "\\" + Path.GetFileNameWithoutExtension(f) + "_" + i.ToString() + Path.GetExtension(f));
                     frame.Dispose();
                     i++;
@@ -647,7 +648,7 @@ namespace HSDRawViewer.GUI.Plugins
                     var imageData = TEXG.GetRGBAImageData();
                     for (int i = 0; i < TEXG.ImageCount; i++)
                     {
-                        var frame = Tools.BitmapTools.RgbaToImage(imageData[i], TEXG.Width, TEXG.Height);
+                        var frame = Tools.BitmapTools.BGRAToBitmap(imageData[i], TEXG.Width, TEXG.Height);
                         g.DrawImage(frame, TEXG.Width * i, 0);
                         frame.Dispose();
                     }
@@ -713,7 +714,7 @@ namespace HSDRawViewer.GUI.Plugins
                     if (pal != null)
                         tobj.TlutData = pal.Data;
 
-                    var frame = Tools.BitmapTools.RgbaToImage(tobj.GetDecodedImageData(), v.Data.Width, v.Data.Height);
+                    var frame = Tools.BitmapTools.BGRAToBitmap(tobj.GetDecodedImageData(), v.Data.Width, v.Data.Height);
                     frame.Save(Path.GetDirectoryName(f) + "\\" + Path.GetFileNameWithoutExtension(f) + "_" + i.ToString() + Path.GetExtension(f));
                     frame.Dispose();
                 }
@@ -753,7 +754,7 @@ namespace HSDRawViewer.GUI.Plugins
                                 buf.Data = temp.ImageData;
                                 tobjs.Add(buf);
 
-                                if (TPLConv.IsPalettedFormat(td.TextureFormat))
+                                if (ImageDataFormat.IsPalettedFormat(td.TextureFormat))
                                 {
                                     HSD_TlutBuffer palbuf = new HSD_TlutBuffer();
                                     palbuf.Data = temp.TlutData;
@@ -770,7 +771,7 @@ namespace HSDRawViewer.GUI.Plugins
 
                         TexAnim.ImageBuffers = ib;
 
-                        if (TPLConv.IsPalettedFormat(td.TextureFormat))
+                        if (ImageDataFormat.IsPalettedFormat(td.TextureFormat))
                         {
                             var tb = new HSDRaw.HSDArrayAccessor<HSD_TlutBuffer>();
                             tb.Array = pals.ToArray();

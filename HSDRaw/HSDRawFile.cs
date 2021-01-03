@@ -423,7 +423,7 @@ namespace HSDRaw
         }
 
         //https://stackoverflow.com/questions/16340/how-do-i-generate-a-hashcode-from-a-byte-array-in-c/16381
-        private static int ComputeHash(params byte[] data)
+        public static int ComputeHash(params byte[] data)
         {
             unchecked
             {
@@ -805,6 +805,7 @@ namespace HSDRaw
                 x => x.Equals("lclData") ?  new SBM_TM_LCancelData() : null,
                 x => x.Equals("ldshData") ?  new SBM_TM_LedgedashData() : null,
                 x => x.Equals("wdshData") ?  new SBM_TM_WavedashhData() : null,
+                x => x.StartsWith("mnName") ?  new HSDFixedLengthPointerArrayAccessor<HSD_ShiftJIS_String>() : null,
                 x => new HSDAccessor(),
         };
 
