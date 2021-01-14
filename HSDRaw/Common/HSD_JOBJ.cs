@@ -35,7 +35,7 @@ namespace HSDRaw.Common
         EFFECTOR = (3 << 21),
         USER_DEFINED_MTX = (1 << 23),
         MTX_INDEPEND_PARENT = (1 << 24),
-        MTS_INDEPEND_SRT = (1 << 25),
+        MTX_INDEPEND_SRT = (1 << 25),
         GENFLAG1 = (1 << 26),
         GENFLAG2 = (1 << 27),
         ROOT_OPA = (1 << 28),
