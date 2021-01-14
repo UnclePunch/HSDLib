@@ -18,6 +18,7 @@ namespace HSDRaw.Melee
         public HSD_Camera HUDCObjDesc { get => _s.GetReference<HSD_Camera>(0x1C); set => _s.SetReference(0x1C, value); }
         public HSD_JOBJ tip_joint { get => _s.GetReference<HSD_JOBJ>(0x20); set => _s.SetReference(0x20, value); }
         public HSDNullPointerArrayAccessor<HSD_AnimJoint> tip_jointanim { get => _s.GetReference<HSDNullPointerArrayAccessor<HSD_AnimJoint>>(0x24); set => _s.SetReference(0x24, value); }
+        public HSD_JOBJ event_select_jobj { get => _s.GetReference<HSD_JOBJ>(0x28); set => _s.SetReference(0x28, value); }
 
     }
     public class SBM_TM_LabData : HSDAccessor
