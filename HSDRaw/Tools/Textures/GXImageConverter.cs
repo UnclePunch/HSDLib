@@ -21,8 +21,9 @@
 
 // Adapted and simplified for use with HSDLib
 
-using Chadsoft.CTools.Image;
+using ExoQuantSharp;
 using HSDRaw.GX;
+using HSDRaw.Tools.Textures;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -32,34 +33,31 @@ namespace HSDRaw.Tools
     /// <summary>
     /// 
     /// </summary>
-    public class TPLConv
+    public class GXImageConverter
     {
-        public static byte[] EncodeTPL(byte[] rgba, int width, int height, GXTexFmt format, GXTlutFmt palformat, out byte[] paletteData)
-        {
-            return EncodeTPL(Shared.ByteArrayToUIntArray(rgba), width, height, format, palformat, out paletteData);
-        }
         /// <summary>
         /// 
         /// </summary>
         /// <param name="rgba"></param>
+        /// <param name="width"></param>
+        /// <param name="height"></param>
         /// <param name="format"></param>
         /// <param name="palformat"></param>
         /// <param name="paletteData"></param>
         /// <returns></returns>
-        public static byte[] EncodeTPL(uint[] rgba, int width, int height, GXTexFmt format, GXTlutFmt palformat, out byte[] paletteData)
+        public static byte[] EncodeImage(byte[] rgba, int width, int height, GXTexFmt format, GXTlutFmt palformat, out byte[] paletteData)
         {
-            paletteData = null;
-
-            if (IsPalettedFormat(format))
-            {
-                return FromImage(rgba, width, height, format, palformat, out paletteData);
-            }
-            else
-            {
-                return FromImage(rgba, width, height, format);
-            }
+            return FromImage(rgba, width, height, format, palformat, out paletteData);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="format"></param>
+        /// <param name="width"></param>
+        /// <param name="height"></param>
+        /// <param name="imageData"></param>
+        /// <returns></returns>
         public static byte[] DecodeTPL(GXTexFmt format, int width, int height, byte[] imageData)
         {
             return DecodeTPL(format, width, height, imageData, GXTlutFmt.RGB565, 0, new byte[0]);
@@ -108,15 +106,12 @@ namespace HSDRaw.Tools
                     rgba = fromRGBA8(imageData, width, height);
                     break;
                 case GXTexFmt.CI4:
-                    rgba = new byte[0];
                     rgba = fromCI4(imageData, paletteDataRgba, width, height);
                     break;
                 case GXTexFmt.CI8:
-                    rgba = new byte[0];
                     rgba = fromCI8(imageData, paletteDataRgba, width, height);
                     break;
                 case GXTexFmt.CI14X2:
-                    rgba = new byte[0];
                     rgba = fromCI14X2(imageData, paletteDataRgba, width, height);
                     break;
                 case GXTexFmt.CMP:
@@ -130,28 +125,83 @@ namespace HSDRaw.Tools
             return rgba;
         }
 
-        private static byte[] FromImage(uint[] rgba, int width, int height, GXTexFmt format)
-        {
-            byte[] b;
-            return FromImage(rgba, width, height, format, GXTlutFmt.IA8, out b);
-        }
-
-        private static byte[] FromImage(uint[] rgba, int width, int height, GXTexFmt format, GXTlutFmt palFormat, out byte[] palData)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="rgba"></param>
+        /// <param name="width"></param>
+        /// <param name="height"></param>
+        /// <param name="format"></param>
+        /// <param name="palFormat"></param>
+        /// <param name="palData"></param>
+        /// <returns></returns>
+        private static byte[] FromImage(byte[] rgba, int width, int height, GXTexFmt format, GXTlutFmt palFormat, out byte[] palData)
         {
             palData = new byte[0];
-            if (IsPalettedFormat(format))
+
+            if (format == GXTexFmt.CMP)
+                return ToCMP(rgba, width, height);
+
+            if (format == GXTexFmt.CI8)
+                return toCI8(rgba, width, height, palFormat, out palData);
+
+            if (format == GXTexFmt.CI4)
+                return toCI4(rgba, width, height, palFormat, out palData);
+
+            if (format == GXTexFmt.CI14X2)
+                return toCI14(rgba, width, height, palFormat, out palData);
+
+
+            return ImageToTPL(Shared.ByteArrayToUIntArray(rgba), width, height, format);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="palette"></param>
+        /// <param name="palFormat"></param>
+        /// <returns></returns>
+        private static byte[] EncodePalette(byte[] palette, GXTlutFmt palFormat)
+        {
+            var palData = new byte[palette.Length / 2];
+
+            for (int i = 0; i < palette.Length / 4; i++)
             {
-                ColorIndexConverter cic = new ColorIndexConverter(rgba, width, height, format, palFormat);
-                
-                palData = cic.Palette;
-                return cic.Data;
+                int a = palette[i * 4 + 3];
+                int r = palette[i * 4 + 2];
+                int g = palette[i * 4 + 1];
+                int b = palette[i * 4];
+                switch (palFormat)
+                {
+                    case GXTlutFmt.IA8:
+                        var ia8 = EncodeIA8(a, r, g, b);
+                        palData[i * 2] = (byte)((ia8 >> 8) & 0xFF);
+                        palData[i * 2 + 1] = (byte)(ia8 & 0xFF);
+                        break;
+                    case GXTlutFmt.RGB565:
+                        var rgb = EncodeRGB565(b, g, r);
+                        palData[i * 2] = (byte)((rgb >> 8) & 0xFF);
+                        palData[i * 2 + 1] = (byte)(rgb & 0xFF);
+                        break;
+                    case GXTlutFmt.RGB5A3:
+                        var rgba3 = EncodeRGBA3(a, r, g, b);
+                        palData[i * 2] = (byte)((rgba3 >> 8) & 0xFF);
+                        palData[i * 2 + 1] = (byte)(rgba3 & 0xFF);
+                        break;
+                }
             }
-            else
-            {
-                return ImageToTPL(rgba, width, height, format);
-            }
+
+            return palData;
         }
         
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="rgba"></param>
+        /// <param name="width"></param>
+        /// <param name="height"></param>
+        /// <param name="tplFormat"></param>
+        /// <returns></returns>
         private static byte[] ImageToTPL(uint[] rgba, int width, int height, GXTexFmt tplFormat)
         {
             switch (tplFormat)
@@ -180,6 +230,11 @@ namespace HSDRaw.Tools
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="format"></param>
+        /// <returns></returns>
         public static bool IsPalettedFormat(GXTexFmt format)
         {
             if (format == GXTexFmt.CI4
@@ -190,6 +245,13 @@ namespace HSDRaw.Tools
             return false;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="format"></param>
+        /// <param name="width"></param>
+        /// <param name="height"></param>
+        /// <returns></returns>
         public static int GetImageSize(GXTexFmt format, int width, int height)
         {
             if (width % 4 != 0)
@@ -221,6 +283,14 @@ namespace HSDRaw.Tools
             }
         }
         
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="w0"></param>
+        /// <param name="w1"></param>
+        /// <param name="c0"></param>
+        /// <param name="c1"></param>
+        /// <returns></returns>
         private static int avg(int w0, int w1, int c0, int c1)
         {
             int a0 = c0 >> 11;
@@ -241,6 +311,13 @@ namespace HSDRaw.Tools
             return c;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="format"></param>
+        /// <param name="count"></param>
+        /// <param name="data"></param>
+        /// <returns></returns>
         private static uint[] PaletteToRGBA(GXTlutFmt format, int count, byte[] data)
         {
             int itemcount = count;
@@ -269,20 +346,7 @@ namespace HSDRaw.Tools
                 }
                 else //RGB5A3
                 {
-                    if ((pixel & (1 << 15)) != 0) //RGB555
-                    {
-                        a = 255;
-                        b = (((pixel >> 10) & 0x1F) * 255) / 31;
-                        g = (((pixel >> 5) & 0x1F) * 255) / 31;
-                        r = (((pixel >> 0) & 0x1F) * 255) / 31;
-                    }
-                    else //RGB4A3
-                    {
-                        a = (((pixel >> 12) & 0x07) * 255) / 7;
-                        b = (((pixel >> 8) & 0x0F) * 255) / 15;
-                        g = (((pixel >> 4) & 0x0F) * 255) / 15;
-                        r = (((pixel >> 0) & 0x0F) * 255) / 15;
-                    }
+                    DecodeRGBA3(pixel, out a, out r, out g, out b);
                 }
 
                 output[i] = (uint)((r << 0) | (g << 8) | (b << 16) | (a << 24));
@@ -392,8 +456,6 @@ namespace HSDRaw.Tools
         {
             uint[] output = new uint[width * height];
             int inp = 0;
-            int r, g, b;
-            int a = 0;
 
             for (int y = 0; y < height; y += 4)
             {
@@ -408,20 +470,7 @@ namespace HSDRaw.Tools
                             if (y1 >= height || x1 >= width)
                                 continue;
 
-                            if ((pixel & (1 << 15)) != 0)
-                            {
-                                b = (((pixel >> 10) & 0x1F) * 255) / 31;
-                                g = (((pixel >> 5) & 0x1F) * 255) / 31;
-                                r = (((pixel >> 0) & 0x1F) * 255) / 31;
-                                a = 255;
-                            }
-                            else
-                            {
-                                a = (((pixel >> 12) & 0x07) * 255) / 7;
-                                b = (((pixel >> 8) & 0x0F) * 255) / 15;
-                                g = (((pixel >> 4) & 0x0F) * 255) / 15;
-                                r = (((pixel >> 0) & 0x0F) * 255) / 15;
-                            }
+                            DecodeRGBA3(pixel, out int a, out int r, out int g, out int b);
 
                             output[(y1 * width) + x1] = (uint)((r << 0) | (g << 8) | (b << 16) | (a << 24));
                         }
@@ -452,34 +501,13 @@ namespace HSDRaw.Tools
                             else
                             {
                                 int rgba = (int)pixeldata[x + (y * w)];
-                                newpixel = 0;
 
                                 int r = (rgba >> 16) & 0xff;
                                 int g = (rgba >> 8) & 0xff;
                                 int b = (rgba >> 0) & 0xff;
                                 int a = (rgba >> 24) & 0xff;
 
-                                if (a <= 0xda) //RGB4A3
-                                {
-                                    newpixel &= ~(1 << 15);
-
-                                    r = ((r * 15) / 255) & 0xf;
-                                    g = ((g * 15) / 255) & 0xf;
-                                    b = ((b * 15) / 255) & 0xf;
-                                    a = ((a * 7) / 255) & 0x7;
-
-                                    newpixel |= (a << 12) | (r << 8) | (g << 4) | b;
-                                }
-                                else //RGB5
-                                {
-                                    newpixel |= (1 << 15);
-
-                                    r = ((r * 31) / 255) & 0x1f;
-                                    g = ((g * 31) / 255) & 0x1f;
-                                    b = ((b * 31) / 255) & 0x1f;
-
-                                    newpixel |= (r << 10) | (g << 5) | b;
-                                }
+                                newpixel = EncodeRGBA3(a, r, g, b);
                             }
 
                             output[++z] = (byte)(newpixel >> 8);
@@ -491,6 +519,68 @@ namespace HSDRaw.Tools
 
             return output;
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="r"></param>
+        /// <param name="g"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
+        public static ushort EncodeRGBA3(int a, int r, int g, int b)
+        {
+            int newpixel = 0;
+
+            if (a < 0xff) //RGB4A3
+            {
+                r /= 16;
+                g /= 16;
+                b /= 16;
+                a /= 32;
+
+                newpixel = (a << 12) | (r << 8) | (g << 4) | b;
+            }
+            else //RGB5
+            {
+                newpixel |= (1 << 15);
+
+                r /= 8;
+                g /= 8;
+                b /= 8;
+
+                newpixel |= (r << 10) | (g << 5) | b;
+            }
+
+            return (ushort)newpixel;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="r"></param>
+        /// <param name="g"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
+        public static void DecodeRGBA3(ushort pixel, out int a, out int r, out int g, out int b)
+        {
+            if ((pixel & (1 << 15)) != 0) //RGB555
+            {
+                a = 255;
+                b = (((pixel >> 10) & 0x1F) * 255) / 31;
+                g = (((pixel >> 5) & 0x1F) * 255) / 31;
+                r = (((pixel >> 0) & 0x1F) * 255) / 31;
+            }
+            else //RGB4A3
+            {
+                a = (((pixel >> 12) & 0x07) * 255) / 7;
+                b = (((pixel >> 8) & 0x0F) * 255) / 15;
+                g = (((pixel >> 4) & 0x0F) * 255) / 15;
+                r = (((pixel >> 0) & 0x0F) * 255) / 15;
+            }
+        }
+
         #endregion
 
         #region RGB565
@@ -544,13 +634,13 @@ namespace HSDRaw.Tools
                                 newpixel = 0;
                             else
                             {
-                                uint rgba = pixeldata[x + (y * w)];
+                                int rgba = (int)pixeldata[x + (y * w)];
 
-                                uint b = (rgba >> 16) & 0xff;
-                                uint g = (rgba >> 8) & 0xff;
-                                uint r = (rgba >> 0) & 0xff;
+                                int b = (rgba >> 16) & 0xff;
+                                int g = (rgba >> 8) & 0xff;
+                                int r = (rgba >> 0) & 0xff;
 
-                                newpixel = (ushort)(((b >> 3) << 11) | ((g >> 2) << 5) | ((r >> 3) << 0));
+                                newpixel = EncodeRGB565(r, g, b);
                             }
 
                             output[++z] = (byte)(newpixel >> 8);
@@ -562,6 +652,19 @@ namespace HSDRaw.Tools
 
             return output;
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="r"></param>
+        /// <param name="g"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
+        public static ushort EncodeRGB565(int r, int g, int b)
+        {
+            return (ushort)(((b >> 3) << 11) | ((g >> 2) << 5) | ((r >> 3) << 0));
+        }
+
         #endregion
 
         #region I4
@@ -692,13 +795,13 @@ namespace HSDRaw.Tools
                                 newpixel = 0;
                             else
                             {
-                                uint rgba = pixeldata[x + (y * w)];
+                                int rgba = (int)pixeldata[x + (y * w)];
 
-                                uint r = (rgba >> 0) & 0xff;
-                                uint g = (rgba >> 8) & 0xff;
-                                uint b = (rgba >> 16) & 0xff;
+                                int r = (rgba >> 0) & 0xff;
+                                int g = (rgba >> 8) & 0xff;
+                                int b = (rgba >> 16) & 0xff;
 
-                                newpixel = (byte)(((r + g + b) / 3) & 0xff);
+                                newpixel = EncodeI8(r, g, b);
                             }
 
                             output[inp++] = newpixel;
@@ -708,6 +811,18 @@ namespace HSDRaw.Tools
             }
 
             return output;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="r"></param>
+        /// <param name="g"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
+        public static byte EncodeI8(int r, int g, int b)
+        {
+            return (byte)(((r + g + b) / 3) & 0xff);
         }
         #endregion
 
@@ -833,16 +948,14 @@ namespace HSDRaw.Tools
                                 newpixel = 0;
                             else
                             {
-                                uint rgba = pixeldata[x + (y * w)];
+                                int rgba = (int)pixeldata[x + (y * w)];
 
-                                uint r = (rgba >> 0) & 0xff;
-                                uint g = (rgba >> 8) & 0xff;
-                                uint b = (rgba >> 16) & 0xff;
+                                int r = (rgba >> 0) & 0xff;
+                                int g = (rgba >> 8) & 0xff;
+                                int b = (rgba >> 16) & 0xff;
+                                int a = (rgba >> 24) & 0xff;
 
-                                uint i = ((r + g + b) / 3) & 0xff;
-                                uint a = (rgba >> 24) & 0xff;
-
-                                newpixel = (ushort)((a << 8) | i);
+                                newpixel = EncodeIA8(a, r, g, b);
                             }
 
                             byte[] temp = BitConverter.GetBytes(newpixel);
@@ -857,6 +970,21 @@ namespace HSDRaw.Tools
 
             return output;
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="r"></param>
+        /// <param name="g"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
+        public static ushort EncodeIA8(int a, int r, int g, int b)
+        {
+            int i = ((r + g + b) / 3) & 0xff;
+
+            return (ushort)((a << 8) | i);
+        }
+
         #endregion
 
         #region CI4
@@ -891,7 +1019,46 @@ namespace HSDRaw.Tools
             return Shared.UIntArrayToByteArray(output);
         }
 
-        //toCI4 done in class ColorIndexConverter
+        private static byte[] toCI4(byte[] rgba, int width, int height, GXTlutFmt palFormat, out byte[] palData)
+        {
+            ExoQuant exq = new ExoQuant();
+            exq.Feed(rgba);
+            exq.QuantizeEx(16, true);
+
+            exq.GetPalette(out byte[] palette, 16);
+            exq.MapImageOrdered(width, height, rgba, out byte[] ci4Data);
+
+            palData = EncodePalette(palette, palFormat);
+
+            byte[] swizzle = new byte[Shared.AddPadding(width, 8) * Shared.AddPadding(height, 8) / 2];
+
+            int numBlocksH = Shared.AddPadding(height, 8) / 8;
+            int numBlocksW = Shared.AddPadding(width, 8) / 8;
+
+            int index = 0;
+            for (int yBlock = 0; yBlock < numBlocksH; yBlock++)
+            {
+                for (int xBlock = 0; xBlock < numBlocksW; xBlock++)
+                {
+                    for (int pY = 0; pY < 8; pY++)
+                    {
+                        for (int pX = 0; pX < 8; pX+=2)
+                        {
+                            if ((xBlock * 8) + pX < width && (yBlock * 8) + pY < height)
+                                swizzle[index] = (byte)((ci4Data[width * ((yBlock * 8) + pY) + (xBlock * 8) + pX] & 0xF) << 4);
+
+                            if ((xBlock * 8) + pX + 1 < width && (yBlock * 8) + pY < height)
+                                swizzle[index] |= (byte)(ci4Data[width * ((yBlock * 8) + pY) + (xBlock * 8) + pX + 1] & 0xF);
+
+                            index++;
+                        }
+                    }
+                }
+            }
+
+            return swizzle;
+        }
+
         #endregion
 
         #region CI8
@@ -926,7 +1093,43 @@ namespace HSDRaw.Tools
             return Shared.UIntArrayToByteArray(output);
         }
 
-        //toCI8 done in class ColorIndexConverter
+        private static byte[] toCI8(byte[] rgba, int width, int height, GXTlutFmt palFormat, out byte[] palData)
+        {
+            ExoQuant exq = new ExoQuant();
+            exq.Feed(rgba);
+            exq.QuantizeEx(256, true);
+
+            exq.GetPalette(out byte[] palette, 256);
+            exq.MapImageOrdered(width, height, rgba, out byte[] ci8Data);
+
+            palData = EncodePalette(palette, palFormat);
+
+            byte[] swizzle = new byte[Shared.AddPadding(width, 8) * Shared.AddPadding(height, 4)];
+
+            int numBlocksH = Shared.AddPadding(height, 4) / 4;
+            int numBlocksW = Shared.AddPadding(width, 8) / 8;
+
+            int index = 0;
+            for (int yBlock = 0; yBlock < numBlocksH; yBlock++)
+            {
+                for (int xBlock = 0; xBlock < numBlocksW; xBlock++)
+                {
+                    for (int pY = 0; pY < 4; pY++)
+                    {
+                        for (int pX = 0; pX < 8; pX++)
+                        {
+                            if ((xBlock * 8) + pX < width && (yBlock * 4) + pY < height)
+                                swizzle[index] = ci8Data[width * ((yBlock * 4) + pY) + (xBlock * 8) + pX];
+
+                            index++;
+                        }
+                    }
+                }
+            }
+
+            return swizzle;
+        }
+
         #endregion
 
         #region CI14X2
@@ -957,7 +1160,45 @@ namespace HSDRaw.Tools
             return Shared.UIntArrayToByteArray(output);
         }
 
-        //toCI14X2 done in class ColorIndexConverter
+        private static byte[] toCI14(byte[] rgba, int width, int height, GXTlutFmt palFormat, out byte[] palData)
+        {
+            ExoQuant exq = new ExoQuant();
+            exq.Feed(rgba);
+            exq.QuantizeEx(488, true);
+
+            exq.GetPalette(out byte[] palette, 488);
+            // TODO get indexed data as shorts
+            exq.MapImageOrdered(width, height, rgba, out byte[] ci14);
+
+            palData = EncodePalette(palette, palFormat);
+
+            byte[] swizzle = new byte[Shared.AddPadding(width, 4) * Shared.AddPadding(height, 4) * 2];
+
+            int numBlocksH = Shared.AddPadding(height, 4) / 4;
+            int numBlocksW = Shared.AddPadding(width, 4) / 4;
+
+            int index = 0;
+            for (int yBlock = 0; yBlock < numBlocksH; yBlock++)
+            {
+                for (int xBlock = 0; xBlock < numBlocksW; xBlock++)
+                {
+                    for (int pY = 0; pY < 4; pY++)
+                    {
+                        for (int pX = 0; pX < 4; pX++)
+                        {
+                            if ((xBlock * 4) + pX < width && (yBlock * 4) + pY < height)
+                            {
+                                swizzle[index] = 0;
+                                swizzle[index + 1] = ci14[width * ((yBlock * 4) + pY) + (xBlock * 4) + pX];
+                            }
+                            index += 2;
+                        }
+                    }
+                }
+            }
+
+            return swizzle;
+        }
         #endregion
 
         #region CMP
@@ -1096,39 +1337,7 @@ namespace HSDRaw.Tools
 
         public static byte[] ToCMP(byte[] data, int width, int height)
         {
-            return ImageDataFormat.Cmpr.ConvertTo(data, width, height, null);
-            /*byte[] output = new byte[width * height / 2];
-
-            int off1 = 0;
-            for (int y = 0; y < height; y += 4)
-            {
-                for (int x = 0; x < width; x += 4)
-                {
-                    int ww = Shared.AddPadding(width, 8);
-
-                    int x0 = x & 0x03;
-                    int x1 = (x >> 2) & 0x01;
-                    int x2 = x >> 3;
-
-                    int y0 = y & 0x03;
-                    int y1 = (y >> 2) & 0x01;
-                    int y2 = y >> 3;
-
-                    int off = (8 * x1) + (16 * y1) + (32 * x2) + (4 * ww * y2);
-
-                    output[off + 0] = data[off1 + 1];
-                    output[off + 1] = data[off1 + 0];
-                    output[off + 2] = data[off1 + 3];
-                    output[off + 3] = data[off1 + 2];
-
-                    for (int i = 0; i < 4; i++)
-                    {
-                        output[off + 4 + i] = SwapBits(data[off1 + 4 + i]);
-                    }
-                    off1 += 8;
-                }
-            }
-            return output;*/
+            return CMPREncode.ConvertTo(data, width, height);
         }
 
         private static byte SwapBits(byte b)
