@@ -190,10 +190,14 @@ namespace HSDRawViewer.Rendering
                 AnimNode n = new AnimNode();
                 if (j.AOBJ != null)
                 {
-                    FrameCount = (int)Math.Max(FrameCount, j.AOBJ.EndFrame);
+                    FrameCount = (int)Math.Max(FrameCount, j.AOBJ.EndFrame + 1);
 
                     foreach (var fdesc in j.AOBJ.FObjDesc.List)
-                        n.Tracks.Add(new FOBJ_Player(fdesc));
+                    {
+                        var players = new FOBJ_Player(fdesc);
+                        FrameCount = Math.Max(FrameCount, players.Keys.Max(e => e.Frame + 1));
+                        n.Tracks.Add(players);
+                    }
                 }
                 Nodes.Add(n);
             }
@@ -325,11 +329,44 @@ namespace HSDRawViewer.Rendering
             {
                 foreach (var t in n.Tracks)
                 {
-                    t.Keys = t.Keys.Where(e => e.Frame >= startFrame && e.Frame <= endFrame).ToList();
-                    foreach (var k in t.Keys)
+
+                    // the new set of keys after trimming
+                    List<FOBJKey> newKeys = t.Keys.Where(e => e.Frame >= startFrame && e.Frame <= endFrame).ToList();
+
+                    // if there's not a key on the startframe, it'll create a new one
+                    if (!t.Keys.Any(k => k.Frame == startFrame))
+                    {
+                        FOBJKey start = new FOBJKey()
+                        {
+                            Frame = startFrame,
+                            Tan = 0,
+                            Value = t.GetValue(startFrame),
+                            InterpolationType = GXInterpolationType.HSD_A_OP_LIN
+                        };
+                        newKeys.Insert(0, start);
+                    }
+
+                    // same but for the last frame
+                    if (!t.Keys.Any(k => k.Frame == endFrame))
+                    {
+                        FOBJKey end = new FOBJKey()
+                        {
+                            Frame = endFrame,
+                            Tan = 0,
+                            Value = t.GetValue(endFrame),
+                            InterpolationType = GXInterpolationType.HSD_A_OP_LIN
+                        };
+                        newKeys.Add(end);
+                    }
+
+                    // finally shifts all the keys
+                    foreach (var k in newKeys)
                     {
                         k.Frame -= startFrame;
                     }
+
+                    // assigns the new keys
+                    t.Keys = newKeys;
                 }
             }
         }

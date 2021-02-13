@@ -6,7 +6,7 @@ using System.Globalization;
 using System;
 using Be.Windows.Forms;
 
-namespace HSDRawViewer.GUI.Plugins
+namespace HSDRawViewer.GUI.Plugins.Melee
 {
     public partial class SubActionPanel : Form
     {
@@ -408,7 +408,7 @@ namespace HSDRawViewer.GUI.Plugins
 
         public void SetFloatValue(float value)
         {
-            FloatValue = value;
+            Text = value.ToString();
         }
 
         public float GetFloatValue()

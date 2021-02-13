@@ -193,7 +193,7 @@
     bitCount: 26
 
 - code: 19
-  name: Autocancel
+  name: Set Flag
   parameters:
   - name: Flag
     bitCount: 2
@@ -468,15 +468,15 @@
     bitCount: 18
 
 - code: 46
-  name: Color Overlay
+  name: Color Animation
   parameters:
-  - name: Aura ID
+  - name: ID
     bitCount: 9
   - name: Duration
     bitCount: 17
 
 - code: 47
-  name: Remove Color Overlay
+  name: Remove Color Animation
   parameters:
   - name: Unknown
     bitCount: 26

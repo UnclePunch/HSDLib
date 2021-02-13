@@ -5,6 +5,7 @@ using HSDRaw.Melee.Pl;
 using HSDRaw;
 using System.ComponentModel;
 using System.Collections.Generic;
+using HSDRaw.Common.Animation;
 
 namespace HSDRawViewer.GUI
 {
@@ -16,6 +17,43 @@ namespace HSDRawViewer.GUI
 
             public byte[] Data;
 
+            /// <summary>
+            /// 
+            /// </summary>
+            public void SetFromFile(string filePath)
+            {
+                try
+                {
+                    var figaFile = new HSDRawFile(filePath);
+                    if(figaFile.Roots.Count > 0 && figaFile.Roots[0].Data is HSD_FigaTree tree)
+                    {
+                        if(figaFile.Roots[0].Name.Equals(Name))
+                            Data = File.ReadAllBytes(filePath);
+                        else
+                        {
+                            // rename symbol if necessary
+                            //if(MessageBox.Show($"The animation symbol does not match./nRename It?\n{Name}\n{figaFile.Roots[0].Name}", "Symbol Mismatch", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question) == DialogResult.Yes)
+                            {
+                                figaFile.Roots[0].Name = Name;
+                                using (MemoryStream stream = new MemoryStream())
+                                {
+                                    figaFile.Save(stream);
+                                    Data = stream.ToArray();
+                                }
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                    MessageBox.Show("Error replacing animation", "Animation Replace Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
             public override string ToString()
             {
                 return Name;
@@ -34,6 +72,9 @@ namespace HSDRawViewer.GUI
         private BindingList<Animation> ResultAnimations = new BindingList<Animation>();
 
         private SBM_FighterData PlayerData;
+
+        private string ftDataPath;
+        private string ftAJPath;
 
         public AJSplitDialog()
         {
@@ -138,6 +179,7 @@ namespace HSDRawViewer.GUI
                 {
                     if(root.Data is SBM_FighterData plData)
                     {
+                        ftDataPath = f;
                         PlayerFile = file;
                         PlayerData = plData;
                         FighterName = root.Name.Replace("ftData", "");
@@ -213,6 +255,7 @@ namespace HSDRawViewer.GUI
             lbFighting.EndUpdate();
 
             AJLoaded = true;
+            ftAJPath = filePath;
         }
 
         /// <summary>
@@ -316,7 +359,9 @@ namespace HSDRawViewer.GUI
                     if(v is Animation anim)
                     {
                         if (f != null)
-                            anim.Data = File.ReadAllBytes(f);
+                        {
+                            anim.SetFromFile(f);
+                        }
                     }
             }
         }
@@ -365,7 +410,9 @@ namespace HSDRawViewer.GUI
                     foreach (var a in Animations)
                     {
                         if (a.Name == fname)
-                            a.Data = File.ReadAllBytes(file);
+                        {
+                            a.SetFromFile(file);
+                        }
                     }
                 }
             }
@@ -387,12 +434,12 @@ namespace HSDRawViewer.GUI
         /// <param name="filePath"></param>
         private void ExportFiles()
         {
-            var filePath = Tools.FileIO.SaveFile("Pl**.dat (*.dat)|*.dat", "Pl" + FighterName + ".dat");
+            var filePath = Tools.FileIO.SaveFile("Pl**.dat (*.dat)|*.dat", Path.GetFileName(ftDataPath));
             if (filePath != null)
             {
                 if (AJLoaded)
                 {
-                    var AJPath = Tools.FileIO.SaveFile("Pl**AJ.dat (*.dat)|*.dat", "Pl" + FighterName + "AJ.dat");
+                    var AJPath = Tools.FileIO.SaveFile("Pl**AJ.dat (*.dat)|*.dat", Path.GetFileName(ftAJPath));
                     if (AJPath != null)
                         using (BinaryWriter w = new BinaryWriter(new FileStream(AJPath, FileMode.Create)))
                         {
