@@ -53,13 +53,14 @@ namespace HSDRaw
         }
 
         /// <summary>
-        /// Warning: Experimental DO not use
+        /// Warning: Experimental
         /// </summary>
-        public virtual int Trim()
+        protected virtual int Trim()
         {
             var trimmed = 0;
 
-            if (TrimmedSize != -1 && _s.Length > TrimmedSize 
+            if (TrimmedSize != -1
+                && _s.Length > TrimmedSize
                 && GetType() != typeof(Common.HSD_DOBJ)) // skip dobj for unknown reasons
             {
                 System.Diagnostics.Debug.WriteLine(GetType().Name + ": 0x" + _s.Length.ToString("X") + " => 0x" + TrimmedSize.ToString("X"));
@@ -67,23 +68,53 @@ namespace HSDRaw
                 _s.Resize(TrimmedSize);
             }
 
+            return trimmed;
+        }
+
+        /// <summary>
+        /// Warning: Experimental
+        /// </summary>
+        public int Optimize()
+        {
+            return Optimize(new HashSet<HSDStruct>());
+        }
+
+        /// <summary>
+        /// Warning: Experimental
+        /// </summary>
+        private int Optimize(HashSet<HSDStruct> trimmedList)
+        {
+            var trimmed = 0;
+
+            if (trimmedList.Contains(_s))
+                return trimmed;
+
+            trimmedList.Add(_s);
+
+            trimmed += Trim();
+
             foreach (var v in GetType().GetProperties())
             {
-                if (v.PropertyType.IsSubclassOf(typeof(HSDAccessor)) && v.GetIndexParameters().Length == 0 && v.GetValue(this) is HSDAccessor ac)
+                if (v.PropertyType.IsSubclassOf(typeof(HSDAccessor)) && 
+                    v.GetIndexParameters().Length == 0 && 
+                    v.GetValue(this) is HSDAccessor ac)
                 {
-                    if(ac != this)
-                        trimmed += ac.Trim();
+                    if (ac != this)
+                        trimmed += ac.Optimize(trimmedList);
                 }
-                if (v.PropertyType.IsArray && v.GetValue(this) is HSDAccessor[] arr)
+                if (v.PropertyType.IsArray && 
+                    v.GetValue(this) is HSDAccessor[] arr)
                 {
                     foreach (var ai in arr)
-                        if(ai != null && ai != this)
-                            trimmed += ai.Trim();
+                        if (ai != null && ai != this)
+                            trimmed += ai.Optimize(trimmedList);
                 }
             }
 
             return trimmed;
         }
+
+
         
         /// <summary>
         /// Returns a deep clone of given accessor
@@ -100,9 +131,9 @@ namespace HSDRaw
 
         public static bool operator ==(HSDAccessor obj1, HSDAccessor obj2)
         {
-            if ((object)obj1 == null && (object)obj2 == null)
+            if (obj1 is null && obj2 is null)
                 return true;
-            if ((object)obj1 == null || (object)obj2 == null)
+            if (obj1 is null || obj2 is null)
                 return false;
             return obj1.Equals(obj2);
         }
@@ -513,4 +544,5 @@ namespace HSDRaw
             Array = arr.ToArray();
         }
     }
+
 }

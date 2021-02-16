@@ -128,13 +128,42 @@ namespace HSDRawViewer.GUI
 
         public bool EnableFloor { get; set; } = false;
 
-        public bool EnableBack { get; set; } = true;
+        private bool _enableBack = true;
+        public bool EnableBack
+        {
+            get => _enableBack;
+            set
+            {
+                _enableBack = value;
 
-        private bool TakeScreenShot = false;
+                if (EnableBack)
+                    GL.ClearColor(ViewportBackColor);
+                else
+                    GL.ClearColor(0, 0, 0, 0);
+            }
+        }
 
-        private bool CSPMode = false;
+        public bool TakeScreenShot = false;
 
         public bool EnableCSPMode { get; set; } = false;
+        private bool _cspMode = false;
+        public bool CSPMode
+        {
+            get => _cspMode;
+            set
+            {
+                _cspMode = value;
+                if (_cspMode && EnableCSPMode)
+                {
+                    panel1.Dock = DockStyle.Top;
+                    panel1.Height = CSPHeight * 2;
+                }
+                else
+                {
+                    panel1.Dock = DockStyle.Fill;
+                }
+            }
+        }
 
         private static Color ViewportBackColor = Color.FromArgb(50, 50, 50);
 
@@ -190,13 +219,7 @@ namespace HSDRawViewer.GUI
                 if (args.Alt)
                 {
                     if (args.KeyCode == Keys.B)
-                    {
                         EnableBack = !EnableBack;
-                        if (EnableBack)
-                            GL.ClearColor(ViewportBackColor);
-                        else
-                            GL.ClearColor(0, 0, 0, 0);
-                    }
 
                     if (args.KeyCode == Keys.G)
                         EnableFloor = !EnableFloor;
@@ -204,20 +227,8 @@ namespace HSDRawViewer.GUI
                     if (args.KeyCode == Keys.P)
                         TakeScreenShot = true;
 
-                    if (args.KeyCode == Keys.O && EnableCSPMode)
-                    {
-
+                    if (args.KeyCode == Keys.O)
                         CSPMode = !CSPMode;
-                        if(CSPMode)
-                        {
-                            panel1.Dock = DockStyle.Top;
-                            panel1.Height = CSPHeight * 2;
-                        }
-                        else
-                        {
-                            panel1.Dock = DockStyle.Fill;
-                        }
-                    }
 
                     if (args.KeyCode == Keys.R)
                         _camera.RestoreDefault();
@@ -470,13 +481,21 @@ namespace HSDRawViewer.GUI
         /// <param name="e"></param>
         private void panel1_Paint(object sender, PaintEventArgs e)
         {
+            ForceDraw();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public void ForceDraw()
+        {
             if (!ReadyToRender)
                 return;
-            
+
             panel1.MakeCurrent();
 
             GL.Viewport(0, 0, panel1.Width, panel1.Height);
-            
+
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
             GL.PushAttrib(AttribMask.AllAttribBits);
@@ -500,10 +519,10 @@ namespace HSDRawViewer.GUI
 
             foreach (var r in Drawables)
                 r.Draw(_camera, panel1.Width, panel1.Height);
-            
+
             GL.PopAttrib();
-            
-            if(Selecting)
+
+            if (Selecting)
             {
                 GL.MatrixMode(MatrixMode.Modelview);
                 GL.LoadIdentity();
@@ -534,10 +553,10 @@ namespace HSDRawViewer.GUI
                 GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
                 // 136 x 188
-                
+
                 float width = CSPWidth / (float)panel1.Width;
                 float height = CSPHeight / (float)panel1.Height;
-                
+
                 GL.Color4(0.5f, 0.5f, 0.5f, 0.5f);
 
                 GL.Begin(PrimitiveType.Quads);
@@ -585,13 +604,22 @@ namespace HSDRawViewer.GUI
 
             if (TakeScreenShot)
             {
-                var fileName = "render_" + System.DateTime.Now.ToString("yyyy-dd-M-HH-mm-ss") + ".png";
+                string fileName;
+
+                if (CSPMode)
+                    fileName = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(MainForm.Instance.FilePath), "csp_" + System.IO.Path.GetFileNameWithoutExtension(MainForm.Instance.FilePath) + ".png");
+                else
+                    fileName = "render_" + System.DateTime.Now.ToString("yyyy-dd-M-HH-mm-ss") + ".png";
+
                 using (var bitmap = ReadDefaultFramebufferImagePixels(Camera.RenderWidth, Camera.RenderHeight, true))
                 {
                     if (CSPMode)
                     {
                         using (var resize = ResizeImage(bitmap, Camera.RenderWidth / 2, Camera.RenderHeight / 2))
                         {
+                            if (_camera.MirrorScreenshot)
+                                resize.MirrorX();
+
                             Converters.SBM.CSPMaker.MakeCSP(resize);
 
                             using (var csp = resize.Clone(new Rectangle((panel1.Width - CSPWidth) / 4, (panel1.Height - CSPHeight) / 4, CSPWidth / 2, CSPHeight / 2), bitmap.PixelFormat))

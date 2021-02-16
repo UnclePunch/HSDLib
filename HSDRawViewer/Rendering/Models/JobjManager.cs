@@ -56,6 +56,9 @@ namespace HSDRawViewer.Rendering
         [Category("4. Enhancements"), DisplayName("Use Per Pixel Lighting"), Description("Calculates lighting per pixel for a smoother look. Set to false for gamecube style.")]
         public bool UsePerPixelLighting { get; set; } = true;
 
+        [Category("4. Enhancements"), DisplayName("Adjust Saturation"), Description("")]
+        public float Saturation { get; set; } = 1;
+
 
         [Category("2. Lighting Settings"), DisplayName("Use Camera Light"), Description("When true makes the light source emit from the camera's location")]
         public bool UseCameraLight { get; set; } = true;
@@ -97,6 +100,20 @@ namespace HSDRawViewer.Rendering
         public byte DiffuseG { get => DiffuseColor.G; set => DiffuseColor = Color.FromArgb(DiffuseColor.A, DiffuseColor.R, value, DiffuseColor.B); }
         [Browsable(false)]
         public byte DiffuseB { get => DiffuseColor.B; set => DiffuseColor = Color.FromArgb(DiffuseColor.A, DiffuseColor.R, DiffuseColor.G, value); }
+
+        /*[Category("3. Lighting Color"), DisplayName("Specular Intensity"), Description("The intensity of the specular highlight")]
+        public float SpecularPower { get; set; } = 1;
+
+        [Category("3. Lighting Color"), DisplayName("Specular Color"), Description("The color of the specular highlight")]
+        [YamlIgnore]
+        public Color SpecularColor { get; set; } = Color.White;
+
+        [Browsable(false)]
+        public byte SpecularR { get => SpecularColor.R; set => SpecularColor = Color.FromArgb(SpecularColor.A, value, SpecularColor.G, SpecularColor.B); }
+        [Browsable(false)]
+        public byte SpecularG { get => SpecularColor.G; set => SpecularColor = Color.FromArgb(SpecularColor.A, SpecularColor.R, value, SpecularColor.B); }
+        [Browsable(false)]
+        public byte SpecularB { get => SpecularColor.B; set => SpecularColor = Color.FromArgb(SpecularColor.A, SpecularColor.R, SpecularColor.G, value); }*/
     }
 
     /// <summary>
@@ -112,13 +129,15 @@ namespace HSDRawViewer.Rendering
 
         public bool EnableMaterialFrame { get; set; } = false;
 
+        public bool EnableDepth { get; set; } = true;
+
+        public bool RenderSplines { get; set; } = false;
+
         public float MaterialFrame { get; set; }
 
         private HSD_JOBJ RootJOBJ { get; set; }
 
         public DOBJManager DOBJManager = new DOBJManager();
-
-        public bool EnableDepth { get; set; } = true;
 
         public RenderMode RenderMode { get; set; } = RenderMode.Default;
 
@@ -252,6 +271,22 @@ namespace HSDRawViewer.Rendering
         /// </summary>
         /// <param name="jobj"></param>
         /// <returns></returns>
+        public int ParentIndex(HSD_JOBJ jobj)
+        {
+            if (jobj == null)
+                return -1;
+
+            if (jobjToCache.ContainsKey(jobj) && jobjToCache[jobj].Parent != null)
+                return jobjToCache[jobj].Parent.Index;
+            else
+                return -1;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="jobj"></param>
+        /// <returns></returns>
         public int IndexOf(HSD_JOBJ jobj)
         {
             if (jobj == null)
@@ -340,6 +375,51 @@ namespace HSDRawViewer.Rendering
         /// <summary>
         /// 
         /// </summary>
+        public void SetHiddenDOBJs(IEnumerable<int> indices)
+        {
+            var dobjs = GetDOBJs();
+
+            DOBJManager.HiddenDOBJs.Clear();
+
+            foreach (var i in indices)
+                DOBJManager.HiddenDOBJs.Add(dobjs[i]);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerable<int> GetHiddenDOBJIndices()
+        {
+            var dobjs = GetDOBJs();
+
+            foreach(var dobj in DOBJManager.HiddenDOBJs)
+            {
+                var index = dobjs.IndexOf(dobj);
+                if (index != -1)
+                    yield return index;
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public List<HSD_DOBJ> GetDOBJs()
+        {
+            var list = new List<HSD_DOBJ>();
+
+            foreach (var b in jobjToCache)
+                if (b.Key.Dobj != null)
+                    foreach (var d in b.Key.Dobj.List)
+                        list.Add(d);
+
+            return list;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
         public void Render(Camera camera, bool update = true)
         {
             if (RefreshRendering)
@@ -387,6 +467,11 @@ namespace HSDRawViewer.Rendering
                             MatAnimation.DOBJIndex++;
                         }
                     }
+
+                    // render splines if possible
+                    if (RenderSplines && b.Key.Spline != null)
+                        DrawShape.RenderSpline(b.Key.Spline);
+
                     MatAnimation.JOBJIndex++;
                 }
 
@@ -512,7 +597,7 @@ namespace HSDRawViewer.Rendering
             if(jobjToCache.ContainsKey(root))
                 index = jobjToCache[root].Index;
 
-            var local = CreateLocalTransform(root, index);
+            var local = GetLocalTransform(root, index);
             var world = local;
 
             if (parent != null)
@@ -588,7 +673,7 @@ namespace HSDRawViewer.Rendering
         /// </summary>
         /// <param name="jobj"></param>
         /// <returns></returns>
-        private Matrix4 CreateLocalTransform(HSD_JOBJ jobj, int animatedBoneIndex = -1)
+        public Matrix4 GetLocalTransform(HSD_JOBJ jobj, int animatedBoneIndex = -1)
         {
             Matrix4 Transform = Matrix4.CreateScale(jobj.SX, jobj.SY, jobj.SZ) *
                 Matrix4.CreateFromQuaternion(Math3D.FromEulerAngles(jobj.RZ, jobj.RY, jobj.RX)) *
@@ -597,7 +682,6 @@ namespace HSDRawViewer.Rendering
             if (animatedBoneIndex != -1 && Animation != null)
             {
                 Transform = Animation.GetAnimatedMatrix(Frame, animatedBoneIndex, jobj);
-                animatedBoneIndex++;
             }
             
             return Transform;

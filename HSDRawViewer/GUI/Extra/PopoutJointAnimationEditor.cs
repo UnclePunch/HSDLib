@@ -10,6 +10,10 @@ namespace HSDRawViewer.GUI.Extra
 {
     public partial class PopoutJointAnimationEditor : Form
     {
+        public bool CloseOnExit { get; set; } = true;
+
+        public bool MadeChanges { get; internal set; } = false;
+
         /// <summary>
         /// 
         /// </summary>
@@ -25,20 +29,30 @@ namespace HSDRawViewer.GUI.Extra
         /// </summary>
         /// <param name="jobj"></param>
         /// <param name="animManager"></param>
-        public PopoutJointAnimationEditor()
+        public PopoutJointAnimationEditor(bool closeOnExit)
         {
             InitializeComponent();
 
+            CloseOnExit = closeOnExit;
+
             FormClosing += (sender, args) =>
             {
-                args.Cancel = true;
-                Visible = false;
+                if (!CloseOnExit)
+                {
+                    args.Cancel = true;
+                    Visible = false;
+                }
             };
 
-            graphEditor1.OnTrackListUpdate += (s, a) =>
+            graphEditor1.TrackListUpdated += (s, a) =>
             {
                 if (jointTree.SelectedNode is JointNode node)
                     node.AnimNode.Tracks = graphEditor1.TrackPlayers.ToList();
+            };
+
+            graphEditor1.TrackEdited += (s, a) =>
+            {
+                MadeChanges = true;
             };
 
             TopMost = true;
@@ -49,6 +63,8 @@ namespace HSDRawViewer.GUI.Extra
         /// </summary>
         public void SetJoint(HSD_JOBJ jobj, JointAnimManager animManager)
         {
+            MadeChanges = false;
+            graphEditor1.ClearTracks();
             jointTree.BeginUpdate();
             jointTree.Nodes.Clear();
 
@@ -58,7 +74,7 @@ namespace HSDRawViewer.GUI.Extra
             
             for(int i = 0; i < Math.Min(animManager.NodeCount, jobjs.Count); i++)
             {
-                var node = new JointNode() { JOBJ = jobjs[i], AnimNode = animManager.Nodes[i], Text = $"JOINT_{i}" };
+                var node = new JointNode() { JOBJ = jobjs[i], AnimNode = animManager.Nodes[i], Text = $"Joint_{i}" };
                 
                 foreach (var c in jobjs[i].Children)
                     childToParent.Add(c, node);
@@ -84,11 +100,10 @@ namespace HSDRawViewer.GUI.Extra
         /// <param name="e"></param>
         private void jointTree_AfterSelect(object sender, TreeViewEventArgs e)
         {
-            if(jointTree.SelectedNode is JointNode node)
-            {
-                graphEditor1.ClearTracks();
+            graphEditor1.ClearTracks();
+
+            if (jointTree.SelectedNode is JointNode node)
                 graphEditor1.LoadTracks(AnimType.Joint, node.AnimNode.Tracks);
-            }
         }
     }
 }

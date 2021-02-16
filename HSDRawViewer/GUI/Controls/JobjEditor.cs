@@ -15,6 +15,7 @@ using HSDRaw;
 using HSDRawViewer.Tools;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
+using HSDRaw.GX;
 
 namespace HSDRawViewer.GUI.Plugins
 {
@@ -28,9 +29,11 @@ namespace HSDRawViewer.GUI.Plugins
         [Browsable(false)]
         private bool SelectDOBJ { get => (toolStripComboBox2.SelectedIndex == 1); }
 
-        private Dictionary<int, string> BoneLabelMap = new Dictionary<int, string>();
+        private JointMap _jointMap = new JointMap();
 
         private ViewportControl viewport;
+
+        private PopoutJointAnimationEditor jointAnimEditor = new PopoutJointAnimationEditor(false);
 
         /// <summary>
         /// 
@@ -57,6 +60,10 @@ namespace HSDRawViewer.GUI.Plugins
             listDOBJ.SelectedIndexChanged += (sender, args) => {
                 propertyGrid1.SelectedObject = listDOBJ.SelectedItem;
                 JOBJManager.DOBJManager.SelectedDOBJ = ((listDOBJ.SelectedItem as DOBJContainer)?.DOBJ);
+
+                materialDropDownButton1.Enabled = listDOBJ.SelectedItems.Count == 1;
+                buttonMoveDown.Enabled = materialDropDownButton1.Enabled;
+                buttonMoveUp.Enabled = materialDropDownButton1.Enabled;
             };
 
             propertyGrid1.PropertyValueChanged += (sender, args) =>
@@ -65,6 +72,7 @@ namespace HSDRawViewer.GUI.Plugins
                 listDOBJ.SelectedItem = listDOBJ.SelectedItem;
             };
 
+            //listDOBJ.SelectionMode = SelectionMode.MultiExtended;
 
             viewport = new ViewportControl();
             viewport.Dock = DockStyle.Fill;
@@ -78,6 +86,7 @@ namespace HSDRawViewer.GUI.Plugins
 
             Disposed += (sender, args) =>
             {
+                jointAnimEditor.Dispose();
                 if (PluginManager.GetCommonViewport() != null)
                 {
                     if (PluginManager.GetCommonViewport() != null)
@@ -212,7 +221,7 @@ namespace HSDRawViewer.GUI.Plugins
 
             public override string ToString()
             {
-                return $"{Index}. JOBJ {JOBJIndex} : DOBJ {DOBJIndex} : POBJs {PolygonCount} : TOBJS {TextureCount} : PP {HasPixelProcessing} {Name}";
+                return $"{Index}. Joint {JOBJIndex} : Object {DOBJIndex} : Polygons {PolygonCount} : Textures {TextureCount} {Name}";
             }
         }
 
@@ -263,13 +272,13 @@ namespace HSDRawViewer.GUI.Plugins
                 index = 0;
             TreeNode tree = new TreeNode();
 
-            if (BoneLabelMap.ContainsKey(index))
-                tree.Text = BoneLabelMap[index];
+            if (_jointMap[index] != null)
+                tree.Text = _jointMap[index];
             else
             if (!string.IsNullOrEmpty(jobj.ClassName))
-                tree.Text = $"(JOBJ_{index})" + jobj.ClassName;
+                tree.Text = $"(Joint_{index})" + jobj.ClassName;
             else
-                tree.Text = "JOBJ_" + index;
+                tree.Text = "Joint_" + index;
             index++;
             tree.Tag = jobj;
 
@@ -370,6 +379,185 @@ namespace HSDRawViewer.GUI.Plugins
         /// <param name="e"></param>
         private void tabControl1_SelectedIndexChanged(object sender, EventArgs e)
         {
+            propertyGrid1.SelectedObject = null;
+
+            if(tabControl1.SelectedIndex == 2)
+                LoadTextureList();
+            else
+                UnloadTextureList();
+        }
+
+        public class TextureListProxy : ImageArrayItem
+        {
+            private List<HSD_TOBJ> tobjs = new List<HSD_TOBJ>();
+
+            //private Bitmap PreviewImage;
+
+            public int _hash;
+
+            public string Hash { get => _hash.ToString("X"); }
+
+            public GXTexFmt ImageFormat { get => tobjs[0].ImageData.Format; }
+
+            public GXTlutFmt PaletteFormat
+            {
+                get
+                {
+                    if (tobjs[0].TlutData == null)
+                        return GXTlutFmt.IA8;
+
+                    return tobjs[0].TlutData.Format;
+                }
+            }
+
+            public int Width
+            {
+                get
+                {
+                    if (tobjs[0].ImageData == null)
+                        return 0;
+
+                    return tobjs[0].ImageData.Width;
+                }
+            }
+
+            public int Height
+            {
+                get
+                {
+                    if (tobjs[0].ImageData == null)
+                        return 0;
+
+                    return tobjs[0].ImageData.Height;
+                }
+            }
+
+            public TextureListProxy(int hash)
+            {
+                _hash = hash;
+            }
+
+            public void Dispose()
+            {
+                //PreviewImage.Dispose();
+            }
+
+            public override string ToString()
+            {
+                return $"References: {tobjs.Count}";
+            }
+
+            public void AddTOBJ(HSD_TOBJ tobj)
+            {
+                //if (PreviewImage == null)
+                //    PreviewImage = TOBJConverter.ToBitmap(tobj);
+                tobjs.Add(tobj);
+            }
+
+            public void Replace(HSD_TOBJ newTOBJ)
+            {
+                foreach (var t in tobjs)
+                {
+                    if (newTOBJ.ImageData != null)
+                    {
+                        if (t.ImageData == null)
+                            t.ImageData = new HSD_Image();
+                        t.ImageData.ImageData = newTOBJ.ImageData.ImageData;
+                        t.ImageData.Format = newTOBJ.ImageData.Format;
+                        t.ImageData.Width = newTOBJ.ImageData.Width;
+                        t.ImageData.Height = newTOBJ.ImageData.Height;
+                    }
+                    else
+                        t.ImageData = null;
+
+                    if (newTOBJ.TlutData != null)
+                    {
+                        if (t.TlutData == null)
+                            t.TlutData = new HSD_Tlut();
+                        t.TlutData.TlutData = newTOBJ.TlutData.TlutData;
+                        t.TlutData.Format = newTOBJ.TlutData.Format;
+                    }
+                    else
+                        t.TlutData = null;
+
+                    //if(PreviewImage != null)
+                    //    PreviewImage.Dispose();
+                    //PreviewImage = TOBJConverter.ToBitmap(newTOBJ);
+                }
+            }
+
+            public Image ToImage()
+            {
+                if (tobjs.Count > 0)
+                    return TOBJConverter.ToBitmap(tobjs[0]);
+                return null;
+            }
+        }
+
+        public TextureListProxy[] TextureLists { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private void LoadTextureList()
+        {
+            UnloadTextureList();
+
+            var tex = new List<TextureListProxy>();
+            
+            foreach(var jobj in root.BreathFirstList)
+            {
+                if (jobj.Dobj == null)
+                    continue;
+
+                foreach(var dobj in jobj.Dobj.List)
+                {
+                    if (dobj.Mobj == null || dobj.Mobj.Textures == null)
+                        continue;
+
+                    foreach(var tobj in dobj.Mobj.Textures.List)
+                    {
+                        var hash = HSDRawFile.ComputeHash(tobj.GetDecodedImageData());
+
+                        var proxy = tex.Find(e => e._hash == hash);
+
+                        if(proxy == null)
+                        {
+                            proxy = new TextureListProxy(hash);
+                            tex.Add(proxy);
+                        }
+
+                        proxy.AddTOBJ(tobj);
+                    }
+                }
+            }
+
+            TextureLists = tex.ToArray();
+            textureArrayEditor.SetArrayFromProperty(this, "TextureLists");
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private void UnloadTextureList()
+        {
+            if(TextureLists != null)
+            {
+                foreach (var t in TextureLists)
+                    t.Dispose();
+                TextureLists = new TextureListProxy[0];
+                textureArrayEditor.SetArrayFromProperty(this, "TextureLists");
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public void TakeScreenShot()
+        {
+            Show();
+            viewport.TakeScreenShot = true;
+            viewport.ForceDraw();
         }
 
         /// <summary>
@@ -433,7 +621,7 @@ namespace HSDRawViewer.GUI.Plugins
         {
             ModelImporter.ReplaceModelFromFile(root);
             JOBJManager.RefreshRendering = true;
-            BoneLabelMap.Clear();
+            _jointMap.Clear();
             RefreshGUI();
         }
 
@@ -444,7 +632,7 @@ namespace HSDRawViewer.GUI.Plugins
         /// <param name="e"></param>
         private void exportModelToFileToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            ModelExporter.ExportFile(root, BoneLabelMap);
+            ModelExporter.ExportFile(root, _jointMap);
         }
         
         /// <summary>
@@ -565,7 +753,7 @@ namespace HSDRawViewer.GUI.Plugins
                         {
                             dobj.Mobj.RenderFlags |= RENDER_MODE.TEX0;
                             dobj.Mobj.Textures = TOBJConverter.BitmapToTOBJ(dummy, HSDRaw.GX.GXTexFmt.I4, HSDRaw.GX.GXTlutFmt.IA8);
-                            dobj.Mobj.Textures.Trim();
+                            dobj.Mobj.Textures.Optimize();
                         }
 
                         root.Dobj.Add(dobj);
@@ -661,31 +849,11 @@ namespace HSDRawViewer.GUI.Plugins
         /// <param name="e"></param>
         private void importBoneLabelINIToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            BoneLabelMap.Clear();
-
             var f = Tools.FileIO.OpenFile("Label INI (*.ini)|*.ini");
 
             if(f != null)
             {
-                var text = File.ReadAllText(f);
-                text = Regex.Replace(text, @"\#.*", "");
-
-                var lines = text.Split('\n');
-
-                foreach(var r in lines)
-                {
-                    var args = r.Split('=');
-
-                    if(args.Length == 2)
-                    {
-                        var name = args[1].Trim();
-                        var i = 0;
-                        if(int.TryParse(new string(args[0].Where(c => char.IsDigit(c)).ToArray()), out i))
-                        {
-                            BoneLabelMap.Add(i, name);
-                        }
-                    }
-                }
+                _jointMap.Load(f);
             }
 
             RefreshGUI();
@@ -737,17 +905,27 @@ namespace HSDRawViewer.GUI.Plugins
         /// <param name="e"></param>
         private void buttonDOBJDelete_Click(object sender, EventArgs e)
         {
-            if (MessageBox.Show("Are you sure?\nThis cannot be undone", "Delete DOBJ", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+            DeleteSelectedDOBJs();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private void DeleteSelectedDOBJs()
+        {
+            if (listDOBJ.SelectedItems.Count > 0 && MessageBox.Show("Are you sure?\nThis cannot be undone", "Delete Object?", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
             {
-                var dobj = listDOBJ.SelectedItem as DOBJContainer;
-                if(dobj != null)
+                foreach (DOBJContainer dobj in listDOBJ.SelectedItems)
                 {
+                    /*if (listDOBJ.CheckedItems.Contains(dobj))
+                        continue;*/
+
                     var dobjs = dobj.ParentJOBJ.Dobj.List;
 
                     HSD_DOBJ prev = null;
-                    foreach(var d in dobjs)
+                    foreach (var d in dobjs)
                     {
-                        if(d == dobj.DOBJ)
+                        if (d == dobj.DOBJ)
                         {
                             if (prev == null)
                                 dobj.ParentJOBJ.Dobj = d.Next;
@@ -757,10 +935,10 @@ namespace HSDRawViewer.GUI.Plugins
                         }
                         prev = d;
                     }
-
-                    JOBJManager.RefreshRendering = true;
-                    RefreshGUI();
                 }
+
+                JOBJManager.RefreshRendering = true;
+                RefreshGUI();
             }
         }
 
@@ -788,7 +966,7 @@ namespace HSDRawViewer.GUI.Plugins
             {
                 if (Path.GetExtension(f).ToLower().Equals(".chr0"))
                 {
-                    LoadAnimation(CHR0Converter.LoadCHR0(f, BoneLabelMap));
+                    LoadAnimation(CHR0Converter.LoadCHR0(f, _jointMap));
                 }
                 else
                 if (Path.GetExtension(f).ToLower().Equals(".mota") || Path.GetExtension(f).ToLower().Equals(".gnta") ||
@@ -802,7 +980,7 @@ namespace HSDRawViewer.GUI.Plugins
                 else
                 if (Path.GetExtension(f).ToLower().Equals(".anim"))
                 {
-                    LoadAnimation(ConvMayaAnim.ImportFromMayaAnim(f));
+                    LoadAnimation(ConvMayaAnim.ImportFromMayaAnim(f, _jointMap));
                 }
                 else
                 if (Path.GetExtension(f).ToLower().Equals(".dat"))
@@ -844,7 +1022,7 @@ namespace HSDRawViewer.GUI.Plugins
 
             if (f != null)
             {
-                ConvMayaAnim.ExportToMayaAnim(f, JOBJManager.Animation, BoneLabelMap);
+                ConvMayaAnim.ExportToMayaAnim(f, JOBJManager.Animation, _jointMap);
             }
         }
 
@@ -1097,7 +1275,7 @@ namespace HSDRawViewer.GUI.Plugins
         {
             if (propertyGrid1.SelectedObject is DOBJContainer con)
             {
-                var f = Tools.FileIO.SaveFile("MOBJ (*.mobj)|*.mobj");
+                var f = Tools.FileIO.SaveFile("Material (*.mobj)|*.mobj");
 
                 if (f != null)
                 {
@@ -1117,7 +1295,7 @@ namespace HSDRawViewer.GUI.Plugins
         {
             if (propertyGrid1.SelectedObject is DOBJContainer con)
             {
-                var f = Tools.FileIO.OpenFile("MOBJ (*.mobj)|*.mobj");
+                var f = Tools.FileIO.OpenFile("Material (*.mobj)|*.mobj");
 
                 if (f != null)
                 {
@@ -1162,26 +1340,7 @@ namespace HSDRawViewer.GUI.Plugins
             var f = Tools.FileIO.SaveFile("Label INI (*.ini)|*.ini");
 
             if (f != null)
-            {
-                using (FileStream stream = new FileStream(f, FileMode.Create))
-                using (StreamWriter w = new StreamWriter(stream))
-                    if (BoneLabelMap.Count > 0)
-                    {
-                        foreach (var b in BoneLabelMap)
-                            w.WriteLine($"JOBJ_{b.Key}={b.Value}");
-                    }
-                    else
-                    {
-                        var bones = root.BreathFirstList;
-                        var ji = 0;
-                        foreach(var j in bones)
-                        {
-                            if (!string.IsNullOrEmpty(j.ClassName))
-                                w.WriteLine($"JOBJ_{ji}={j.ClassName}");
-                            ji++;
-                        }
-                    }
-            }
+                _jointMap.Save(f, root);
         }
 
         /// <summary>
@@ -1193,7 +1352,7 @@ namespace HSDRawViewer.GUI.Plugins
         {
             JOBJTools.UpdateJOBJFlags(root);
         }
-        
+
         /// <summary>
         /// 
         /// </summary>
@@ -1201,13 +1360,15 @@ namespace HSDRawViewer.GUI.Plugins
         /// <param name="e"></param>
         private void viewAnimationGraphToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if(JOBJManager.Animation != null)
-            {
-                var joint = treeJOBJ.SelectedNode.Tag as HSD_JOBJ;
+            jointAnimEditor.SetJoint(root, JOBJManager.Animation);
+            jointAnimEditor.Show();
+            jointAnimEditor.WindowState = FormWindowState.Maximized;
 
+            /*if (JOBJManager.Animation != null && treeJOBJ.SelectedNode.Tag is HSD_JOBJ joint)
+            {
                 var boneIndex = JOBJManager.IndexOf(joint);
 
-                if(boneIndex < JOBJManager.Animation.NodeCount && boneIndex >= 0)
+                if (boneIndex < JOBJManager.Animation.NodeCount && boneIndex >= 0)
                 {
                     var node = JOBJManager.Animation.Nodes[boneIndex];
 
@@ -1216,7 +1377,7 @@ namespace HSDRawViewer.GUI.Plugins
                         editor.ShowDialog(this);
                     }
                 }
-            }
+            }*/
         }
 
         /// <summary>
@@ -1237,7 +1398,7 @@ namespace HSDRawViewer.GUI.Plugins
         /// <param name="e"></param>
         private void clearSelectedPOBJsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (MessageBox.Show("Are you sure?\nThis will clear all polygons in the selected DOBJ\n and cannot be undone", "Clear POBJs", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+            if (MessageBox.Show("Are you sure?\nThis will clear all polygons in the selected object\n and cannot be undone", "Clear Polygons", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
             {
                 if (propertyGrid1.SelectedObject is DOBJContainer con)
                     con.DOBJ.Pobj = null;
@@ -1314,9 +1475,21 @@ namespace HSDRawViewer.GUI.Plugins
         /// </summary>
         public class SceneSettings
         {
+            public float Frame { get; set; } = 0;
+
+            public bool CSPMode { get; set; } = false;
+
+            public bool ShowGrid { get; set; } = true;
+
+            public bool ShowBackdrop { get; set; } = true;
+
             public Camera Camera { get; set; }
 
             public JOBJManagerSettings Settings { get; set; }
+
+            public JointAnimManager Animation { get; set; }
+
+            public int[] HiddenNodes { get; set; }
 
             /// <summary>
             /// 
@@ -1327,6 +1500,7 @@ namespace HSDRawViewer.GUI.Plugins
             {
                 var deserializer = new DeserializerBuilder()
                 .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                .IgnoreUnmatchedProperties()
                 .Build();
 
                 return deserializer.Deserialize<SceneSettings>(File.ReadAllText(filePath));
@@ -1348,6 +1522,11 @@ namespace HSDRawViewer.GUI.Plugins
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void exportSceneSettingsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             var f = FileIO.SaveFile("Scene (*.yaml)|*.yml");
@@ -1356,23 +1535,169 @@ namespace HSDRawViewer.GUI.Plugins
             {
                 SceneSettings settings = new SceneSettings()
                 {
+                    Frame = viewport.Frame,
+                    CSPMode = viewport.CSPMode,
+                    ShowGrid = viewport.EnableFloor,
+                    ShowBackdrop = viewport.EnableBack,
                     Camera = viewport.Camera,
-                    Settings = JOBJManager.settings
+                    Settings = JOBJManager.settings,
+                    Animation = JOBJManager.Animation,
+                    HiddenNodes = JOBJManager.GetHiddenDOBJIndices().ToArray()
                 };
                 settings.Serialize(f);
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void importSceneSettingsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             var f = FileIO.OpenFile("Scene (*.yaml)|*.yml");
 
             if (f != null)
-            {
-                var settings = SceneSettings.Deserialize(f);
+                LoadSceneYAML(f);
+        }
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="filePath"></param>
+        public void LoadSceneYAML(string filePath)
+        {
+            var settings = SceneSettings.Deserialize(filePath);
+            
+            viewport.CSPMode = settings.CSPMode;
+
+            if (settings.CSPMode && showSelectionOutlineToolStripMenuItem.Checked)
+                showSelectionOutlineToolStripMenuItem.PerformClick();
+
+            viewport.EnableBack = settings.ShowBackdrop;
+            viewport.EnableFloor = settings.ShowGrid;
+
+            if (settings.Camera != null)
                 viewport.Camera = settings.Camera;
+
+            if (settings.Settings != null)
                 JOBJManager.settings = settings.Settings;
+
+            if (settings.Animation != null)
+            {
+                // load animations
+                LoadAnimation(settings.Animation);
+
+                // load material animation if exists
+                var symbol = MainForm.SelectedDataNode.Text.Replace("_joint", "_matanim_joint");
+                var matAnim = MainForm.Instance.GetSymbol(symbol);
+                if (matAnim != null && matAnim is HSD_MatAnimJoint maj)
+                    LoadAnimation(maj);
+
+                // set frames
+                //JOBJManager.Frame = settings.Frame;
+                //JOBJManager.MaterialFrame = settings.Frame;
+                viewport.Frame = settings.Frame;
             }
+
+            if (settings.HiddenNodes != null)
+                for (int i = 0; i < listDOBJ.Items.Count; i++)
+                    listDOBJ.SetItemChecked(i, !settings.HiddenNodes.Contains(i));
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void textureArrayEditor_SelectedObjectChanged(object sender, EventArgs e)
+        {
+            propertyGrid1.SelectedObject = textureArrayEditor.SelectedObject;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void replaceTextureButton_Click(object sender, EventArgs e)
+        {
+            var f = FileIO.OpenFile(ApplicationSettings.ImageFileFilter);
+            if (f != null)
+                ReplaceTexture(f);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void textureArrayEditor_DragEnter(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+                e.Effect = DragDropEffects.All;
+            else
+                e.Effect = DragDropEffects.None;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void textureArrayEditor_DragDrop(object sender, DragEventArgs e)
+        {
+            string[] s = (string[])e.Data.GetData(DataFormats.FileDrop, false);
+
+            if (s != null && s.Length > 0)
+                ReplaceTexture(s[0]);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="f"></param>
+        private void ReplaceTexture(string f)
+        {
+            if (textureArrayEditor.SelectedObject is TextureListProxy proxy)
+            {
+                if (!TOBJConverter.FormatFromString(f, out GXTexFmt imgFormat, out GXTlutFmt palFormat))
+                {
+                    using (var teximport = new TextureImportDialog())
+                        if (teximport.ShowDialog() == DialogResult.OK)
+                        {
+                            imgFormat = teximport.TextureFormat;
+                            palFormat = teximport.PaletteFormat;
+                        }
+                        else
+                            return;
+                }
+
+                proxy.Replace(TOBJConverter.ImportTOBJFromFile(f, imgFormat, palFormat));
+                JOBJManager.RefreshRendering = true;
+                textureArrayEditor.Invalidate();
+                textureArrayEditor.Update();
+            }
+        }
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void treeJOBJ_KeyPress(object sender, KeyPressEventArgs e)
+        {
+
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void listDOBJ_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            DeleteSelectedDOBJs();
         }
     }
 }

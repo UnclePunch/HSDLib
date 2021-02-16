@@ -17,16 +17,29 @@ namespace HSDRawViewer.Converters
     /// </summary>
     public class ModeltoCollData
     {
-        private class Line
+        public class Line
         {
-            public Vector3 P0;
-            public Vector3 P1;
+            public Vector2 P0;
+            public Vector2 P1;
 
             public float Slope { get => (P1.Y - P0.Y) / (P1.X - P0.X); }
 
+            public float Angle
+            {
+                get
+                {
+                    var angle = Math.Atan2((P1.Y - P0.Y), (P1.X - P0.X));
+
+                    if (angle < 0)
+                        angle += 360;
+
+                    return (float)angle;
+                }
+            }
+
             public override bool Equals(object obj)
             {
-                return obj is Line l && l.P0.Equals(P0) && l.P1.Equals(P1);
+                return obj is Line l && ((P1.Equals(l.P1) && P0.Equals(l.P0)) || (P1.Equals(l.P0) && P0.Equals(l.P1)));
             }
 
             public override int GetHashCode()
@@ -34,27 +47,229 @@ namespace HSDRawViewer.Converters
                 return P0.GetHashCode() | P1.GetHashCode();
             }
 
-            /*public bool Intersects(Line l)
+            public override string ToString()
             {
-                var rayOrigin = P0;
-                var rayDirection = (P1 - P0).Normalized();
+                return $"{P0}, {P1}";
+            }
 
-                var v1 = rayOrigin - point1;
-                var v2 = point2 - point1;
-                var v3 = new Vector(-rayDirection.Y, rayDirection.X);
-                
-                var dot = v2 * v3;
-                if (Math.Abs(dot) < 0.000001)
-                    return null;
+            public float AngleBetween(Line line)
+            {
+                return line.Angle - Angle;
+            }
 
-                var t1 = Vector.CrossProduct(v2, v1) / dot;
-                var t2 = (v1 * v3) / dot;
+            public bool FindIntersection(Line line, out Vector2 intersection)
+            {
+                var p0_x = P0.X;
+                var p0_y = P0.Y;
+                var p1_x = P1.X;
+                var p1_y = P1.Y;
 
-                if (t1 >= 0.0 && (t2 >= 0.0 && t2 <= 1.0))
-                    return t1;
+                var p2_x = line.P0.X;
+                var p2_y = line.P0.Y;
+                var p3_x = line.P1.X;
+                var p3_y = line.P1.Y;
+
+                intersection = Vector2.Zero;
+
+                float s1_x, s1_y, s2_x, s2_y;
+                s1_x = p1_x - p0_x; s1_y = p1_y - p0_y;
+                s2_x = p3_x - p2_x; s2_y = p3_y - p2_y;
+
+                float s, t;
+                s = (-s1_y * (p0_x - p2_x) + s1_x * (p0_y - p2_y)) / (-s2_x * s1_y + s1_x * s2_y);
+                t = (s2_x * (p0_y - p2_y) - s2_y * (p0_x - p2_x)) / (-s2_x * s1_y + s1_x * s2_y);
+
+                // Collision detected
+                if (s >= 0 && s <= 1 && t >= 0 && t <= 1)
+                {
+                    intersection = new Vector2(p0_x + (t * s1_x), p0_y + (t * s1_y));
+                    return true;
+                }
+                // No collision
+                return false; 
+            }
+
+            const float EPSILON = 0.001f;
+            public bool IsPointOnLine(Vector2 point)
+            {
+                float a = (P1.Y - P0.Y) / (P1.X - P1.X);
+                float b = P0.Y - a * P0.X;
+                if (Math.Abs(point.Y - (a * point.X + b)) < EPSILON)
+                {
+                    return true;
+                }
 
                 return false;
-            }*/
+            }
+        }
+
+        public static List<Vector2> PolyTrace(IEnumerable<Line> lines)
+        {
+            var pointToPoint = new Dictionary<Vector2, HashSet<Vector2>>();
+
+            var startPoint = new Vector2(float.MinValue, 0);
+
+            foreach (var line in lines)
+            {
+                if (!pointToPoint.ContainsKey(line.P0))
+                    pointToPoint.Add(line.P0, new HashSet<Vector2>());
+
+                if (!pointToPoint.ContainsKey(line.P1))
+                    pointToPoint.Add(line.P1, new HashSet<Vector2>());
+
+                pointToPoint[line.P0].Add(line.P1);
+                pointToPoint[line.P1].Add(line.P0);
+
+                if (line.P0.X > startPoint.X)
+                    startPoint = line.P0;
+
+                if (line.P1.X > startPoint.X)
+                    startPoint = line.P1;
+            }
+
+            var poly = new List<Vector2>();
+
+            var point = startPoint;
+            var prevPoint = startPoint + Vector2.UnitX;
+
+            while(poly.Count == 0 || point != startPoint)
+            {
+                Vector2 nextPoint = point;
+                var smallestAngle = double.MaxValue;
+
+                foreach(var connected in pointToPoint[point])
+                {
+                    var a = (prevPoint - point).Normalized();
+                    var b = (connected - point).Normalized();
+                    var angle = Math.Atan2(a.X * b.Y - a.Y * b.X, a.X * b.X + a.Y * b.Y);
+
+                    if (angle <= 0)
+                        angle += Math.PI * 2;
+
+                    if(angle < smallestAngle)
+                    {
+                        smallestAngle = angle;
+                        nextPoint = connected;
+                    }
+                    poly.Add(point);
+                    poly.Add(connected);
+
+                }
+
+                poly.Add(point);
+                poly.Add(nextPoint);
+
+                prevPoint = point;
+                point = nextPoint;
+            }
+
+            return poly;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="root"></param>
+        /// <returns></returns>
+        public static List<Vector2> ModelToLines(HSD_JOBJ root)
+        {
+            // get model as easier to access form
+            ModelExporter mx = new ModelExporter(root, new ModelExportSettings() { Optimize = true }, new Tools.JointMap());
+            var scene = mx.Scene;
+
+            HashSet<Line> lines = new HashSet<Line>();
+            List<Vector2> polygon = new List<Vector2>();
+
+            // go through each triangle and check collision with plane
+            // if it collides, get the intersection points as a line
+            //foreach (var m in scene.Models[0].Meshes)
+            {
+                var m = scene.Models[0].Meshes[1];
+                // for each polygon
+                foreach (var p in m.Polygons)
+                {
+                    if (p.PrimitiveType != IONET.Core.Model.IOPrimitive.TRIANGLE)
+                        continue;
+
+                    for (int i = 0; i < p.Indicies.Count; i += 3)
+                    {
+                        var v1 = IOVertexToTKVector(m.Vertices[p.Indicies[i]]);
+                        var v2 = IOVertexToTKVector(m.Vertices[p.Indicies[i + 1]]);
+                        var v3 = IOVertexToTKVector(m.Vertices[p.Indicies[i + 2]]);
+
+                        var l1 = new Line() { P0 = v1, P1 = v2 };
+                        var l2 = new Line() { P0 = v2, P1 = v3 };
+                        var l3 = new Line() { P0 = v1, P1 = v3 };
+
+                        if(!lines.Contains(l1))
+                            lines.Add(l1);
+                        if (!lines.Contains(l2))
+                            lines.Add(l2);
+                        if (!lines.Contains(l3))
+                            lines.Add(l3);
+                    }
+                }
+
+                // break overlapping lines
+                var lineList = new List<Line>();
+
+                foreach (var line in lines)
+                {
+                    List<Vector2> intersections = new List<Vector2>();
+
+                    // check if this line intersects any other line
+                    foreach(var l in lines)
+                    {
+                        if(line != l && !line.IsPointOnLine(l.P0) && !line.IsPointOnLine(l.P1) &&
+                            line.FindIntersection(l, out Vector2 intersection) &&
+                            intersection != line.P0 &&
+                            intersection != line.P1 &&
+                            !intersections.Contains(intersection))
+                            intersections.Add(intersection);
+                    }
+
+                    if (intersections.Count == 0)
+                        lineList.Add(line);
+                    else
+                    {
+                        intersections.Add(line.P1);
+                        Vector2 prev = line.P0;
+                        foreach(var l in intersections.OrderBy(e => Vector2.DistanceSquared(line.P0, e)))
+                        {
+                            lineList.Add(new Line() { P0 = prev, P1 = l });
+                            prev = l;
+                        }
+                    }
+                }
+
+                //polygon.AddRange(PolyTrace(lineList));
+
+                foreach(var line in lineList)
+                {
+                    polygon.Add(line.P0);
+                    polygon.Add(line.P1);
+                }
+            }
+
+
+
+            // merge all polygons into one
+
+            // outside clockwise
+            // inside counter clockwise
+
+
+            return polygon;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="vertex"></param>
+        /// <returns></returns>
+        private static Vector2 IOVertexToTKVector(IONET.Core.Model.IOVertex vertex)
+        {
+            return new Vector2(vertex.Position.Z, vertex.Position.Y);
         }
 
         public static SBM_Coll_Data JOBJtoCollData(HSD_JOBJ root)
@@ -96,12 +311,12 @@ namespace HSDRawViewer.Converters
             CollLineGroup lineGroup = new CollLineGroup();
 
             // gather unique vertices
-            Dictionary<Vector3, CollVertex> vertToVert = new Dictionary<Vector3, CollVertex>();
-            
+            Dictionary<Vector2, CollVertex> vertToVert = new Dictionary<Vector2, CollVertex>();
+
             // generate and connect lines
             List<CollLine> collLines = new List<CollLine>();
-            Dictionary<Vector3, CollLine> leftPointToLine = new Dictionary<Vector3, CollLine>();
-            Dictionary<Vector3, CollLine> rightPointToLine = new Dictionary<Vector3, CollLine>();
+            Dictionary<Vector2, CollLine> leftPointToLine = new Dictionary<Vector2, CollLine>();
+            Dictionary<Vector2, CollLine> rightPointToLine = new Dictionary<Vector2, CollLine>();
             foreach (var l in Lines)
             {
                 if (!vertToVert.ContainsKey(l.P0))
@@ -188,31 +403,7 @@ namespace HSDRawViewer.Converters
             }
         }
 
-        private static bool TriangleIntersectsPlane(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 planePosition, Vector3 planeNormal, out Vector3 i0, out Vector3 i1)
-        {
-            List<Vector3> intersections = new List<Vector3>();
-            Vector3 I;
-            i0 = Vector3.Zero;
-            i1 = Vector3.Zero;
-
-            if (intersect3D_SegmentPlane(p0, p1, planePosition, planeNormal, out I) == 1)
-                intersections.Add(I);
-            if (intersect3D_SegmentPlane(p1, p2, planePosition, planeNormal, out I) == 1)
-                intersections.Add(I);
-            if (intersect3D_SegmentPlane(p0, p2, planePosition, planeNormal, out I) == 1)
-                intersections.Add(I);
-
-            if (intersections.Count == 2)
-            {
-                i0 = intersections[0];
-                i1 = intersections[1];
-                return true;
-            }
-
-            return false;
-        }
-
-        private static int intersect3D_SegmentPlane(Vector3 P0, Vector3 P1, Vector3 V0, Vector3 N0, out Vector3 I)
+        private static int LinePlaneIntersection(Vector3 P0, Vector3 P1, Vector3 V0, Vector3 N0, out Vector3 I)
         {
             I = Vector3.Zero;
             Vector3 u = P1 - P0;
@@ -237,6 +428,46 @@ namespace HSDRawViewer.Converters
 
             I = P0 + sI * u;                  // compute segment intersect point
             return 1;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="rayOrigin"></param>
+        /// <param name="rayDirection"></param>
+        /// <param name="point1"></param>
+        /// <param name="point2"></param>
+        /// <returns></returns>
+        public static double GetRayToLineSegmentIntersection(Vector2 rayOrigin, Vector2 rayDirection, Vector2 point1, Vector2 point2)
+        {
+            rayDirection.Normalize();
+
+            Vector2 v1 = rayOrigin - point1;
+            Vector2 v2 = point2 - point1;
+            Vector2 v3 = new Vector2(-rayDirection.Y, rayDirection.X);
+
+            float dot = Vector2.Dot(v2, v3);
+            if (Math.Abs(dot) < 0.000001)
+                return -1.0f;
+
+            float t1 = CrossProduct(v2, v1) / dot;
+            float t2 = Vector2.Dot(v1, v3) / dot;
+
+            if (t1 >= 0.0 && (t2 >= 0.0 && t2 <= 1.0))
+                return t1;
+
+            return -1.0f;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="v1"></param>
+        /// <param name="v2"></param>
+        /// <returns></returns>
+        private static float CrossProduct(Vector2 v1, Vector2 v2)
+        {
+            return (v1.X * v2.Y) - (v1.Y * v2.X);
         }
     }
 }

@@ -35,7 +35,7 @@ namespace HSDRaw.Common
         EFFECTOR = (3 << 21),
         USER_DEFINED_MTX = (1 << 23),
         MTX_INDEPEND_PARENT = (1 << 24),
-        MTS_INDEPEND_SRT = (1 << 25),
+        MTX_INDEPEND_SRT = (1 << 25),
         ROOT_OPA = (1 << 28),
         ROOT_XLU = (1 << 29),
         ROOT_TEXEDGE = (1 << 30)
@@ -79,7 +79,7 @@ namespace HSDRaw.Common
 
         public HSD_ROBJ ROBJ { get => _s.GetReference<HSD_ROBJ>(0x3C); set => _s.SetReference(0x3C, value); }
 
-        public override int Trim()
+        protected override int Trim()
         {
             // quit optimizing these away
             _s.CanBeBuffer = false;

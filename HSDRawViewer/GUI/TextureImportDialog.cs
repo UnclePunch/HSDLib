@@ -41,7 +41,7 @@ namespace HSDRawViewer.GUI
             }
             set
             {
-                cbFormat.SelectedItem = value.ToString();
+                cbFormat.SelectedItem = value;
             }
         }
         public GXTlutFmt PaletteFormat
@@ -54,7 +54,7 @@ namespace HSDRawViewer.GUI
             }
             set
             {
-                sbPalFormat.SelectedItem = value.ToString();
+                sbPalFormat.SelectedItem = value;
             }
         }
 
@@ -111,7 +111,7 @@ namespace HSDRawViewer.GUI
 
         private void cbFormat_SelectedIndexChanged(object sender, EventArgs e)
         {
-            sbPalFormat.Enabled = TPLConv.IsPalettedFormat(TextureFormat);
+            sbPalFormat.Enabled = GXImageConverter.IsPalettedFormat(TextureFormat);
 
             propertyGrid1.SelectedObject = null;
 
