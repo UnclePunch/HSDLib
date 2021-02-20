@@ -63,4 +63,11 @@ namespace HSDRaw.Melee
         public HSDNullPointerArrayAccessor<HSD_MatAnimJoint> target_matanim { get => _s.GetReference<HSDNullPointerArrayAccessor<HSD_MatAnimJoint>>(0x10); set => _s.SetReference(0x10, value); }
 
     }
+    public class SBM_TM_MenuEventSelectData : HSDAccessor
+    {
+        public HSD_JOBJDesc menu { get => _s.GetReference<HSD_JOBJDesc>(0x00); set => _s.SetReference(0x00, value); }
+        public HSD_Camera menu_cam { get => _s.GetReference<HSD_Camera>(0x04); set => _s.SetReference(0x04, value); }
+        public HSD_JOBJDesc bg { get => _s.GetReference<HSD_JOBJDesc>(0x8); set => _s.SetReference(0x8, value); }
+        public HSD_FogDesc fog { get => _s.GetReference<HSD_FogDesc>(0xC); set => _s.SetReference(0xC, value); }
+    }
 }
