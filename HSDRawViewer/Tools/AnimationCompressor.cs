@@ -1,4 +1,5 @@
-﻿using HSDRaw.Common.Animation;
+﻿using HSDRaw.Common;
+using HSDRaw.Common.Animation;
 using HSDRaw.Tools;
 using System;
 using System.Collections.Generic;
@@ -8,6 +9,78 @@ namespace HSDRawViewer.Tools
 {
     public class AnimationCompressor
     {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="animJoint"></param>
+        public static void OptimizeTracks(HSD_JOBJ model, HSD_AnimJoint animJoint, float epsilon = 0.001f)
+        {
+            var joints = model.BreathFirstList;
+            var anim_joints = animJoint.BreathFirstList;
+
+            if (joints.Count != anim_joints.Count)
+                return;
+
+            for(int i = 0; i < joints.Count; i++)
+            {
+                if (anim_joints[i].AOBJ != null)
+                {
+                    Dictionary<JointTrackType, float> typeToDefaultValue = new Dictionary<JointTrackType, float>();
+                    typeToDefaultValue.Add(JointTrackType.HSD_A_J_TRAX, joints[i].TX);
+                    typeToDefaultValue.Add(JointTrackType.HSD_A_J_TRAY, joints[i].TY);
+                    typeToDefaultValue.Add(JointTrackType.HSD_A_J_TRAZ, joints[i].TZ);
+                    typeToDefaultValue.Add(JointTrackType.HSD_A_J_ROTX, joints[i].RX);
+                    typeToDefaultValue.Add(JointTrackType.HSD_A_J_ROTY, joints[i].RY);
+                    typeToDefaultValue.Add(JointTrackType.HSD_A_J_ROTZ, joints[i].RZ);
+                    typeToDefaultValue.Add(JointTrackType.HSD_A_J_SCAX, joints[i].SX);
+                    typeToDefaultValue.Add(JointTrackType.HSD_A_J_SCAY, joints[i].SY);
+                    typeToDefaultValue.Add(JointTrackType.HSD_A_J_SCAZ, joints[i].SZ);
+
+                    var tracks = anim_joints[i].AOBJ.FObjDesc.List;
+
+                    HSD_FOBJDesc prev = null;
+                    foreach (var t in tracks)
+                    {
+                        var keys = t.GetDecodedKeys();
+                        if (typeToDefaultValue.ContainsKey(t.JointTrackType) && 
+                            ConstantTrack(keys, typeToDefaultValue[t.JointTrackType], epsilon))
+                        {
+                            if (prev != null)
+                                prev.Next = t;
+                            else
+                                anim_joints[i].AOBJ.FObjDesc = t;
+                        }
+                        else
+                        {
+                            prev = t;
+                        }
+                    }
+
+                    if (anim_joints[i].AOBJ.FObjDesc != null)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"{tracks.Count} -> {anim_joints[i].AOBJ.FObjDesc.List.Count}");
+                    }
+                    else
+                    {
+                        anim_joints[i].AOBJ = null;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="keys"></param>
+        /// <param name="defaultValue"></param>
+        /// <param name="epsilon"></param>
+        /// <returns></returns>
+        private static bool ConstantTrack(List<FOBJKey> keys, float defaultValue, float epsilon)
+        {
+            return keys.Count == 1 && Math.Abs(keys[0].Value - defaultValue) < epsilon;
+        }
+
+
         /// <summary>
         /// 
         /// </summary>
@@ -31,42 +104,10 @@ namespace HSDRawViewer.Tools
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="j"></param>
-        /// <param name="depth"></param>
-        /// <returns></returns>
-        public static int MaxDepth(HSD_AnimJoint j, int depth = 0)
-        {
-            var maxDepth = depth;
-
-            if (j.Child != null)
-                foreach (var c in j.Children)
-                    maxDepth = Math.Max(MaxDepth(c, depth + 1), maxDepth);
-
-            return maxDepth;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
         /// <param name="animJoint"></param>
-        public static int AdaptiveCompressAnimation(HSD_AnimJoint j, int index = 0)
+        public static int AdaptiveCompressAnimation(HSD_AnimJoint j, JointMap map, int index = 0)
         {
-            //float rangeStart = 0.05f;
-            //float rangeEnd = 0.001f;
-
-            //var percent = ((float)depth / maxDepth);
-
-            //var lerp = ((rangeStart - rangeEnd) - ((rangeStart - rangeEnd) * percent)) + rangeEnd;
-
-            //lerp = rangeEnd;
-
-            //Console.WriteLine(index + " " + 0.005f);
-
-            float error = 0.001f;
-
-            //TODO: adaptive error
-            if (index < 16)
-                error = 0.001f;
+            float error = map == null ? 0.001f : map.GetError(index);
 
             if (j.AOBJ != null)
                 foreach (var t in j.AOBJ.FObjDesc.List)
@@ -80,7 +121,7 @@ namespace HSDRawViewer.Tools
 
             if (j.Child != null)
                 foreach (var c in j.Children)
-                    index = AdaptiveCompressAnimation(c, index + 1);
+                    index = AdaptiveCompressAnimation(c, map, index + 1);
 
             return index;
         }
