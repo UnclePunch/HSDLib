@@ -11,6 +11,7 @@ using HSDRawViewer.GUI.Extra;
 using System.ComponentModel;
 using GCILib;
 using HSDRawViewer.GUI.Plugins.Melee;
+using HSDRaw.Common;
 
 namespace HSDRawViewer
 {
@@ -97,6 +98,7 @@ namespace HSDRawViewer
             myImageList.Images.Add("anim_texture", Properties.Resources.ico_anim_texture);
             myImageList.Images.Add("anim_material", Properties.Resources.ico_anim_material);
             myImageList.Images.Add("anim_joint", Properties.Resources.ico_anim_joint);
+            myImageList.Images.Add("anim_shape", Properties.Resources.ico_anim_shape);
             myImageList.Images.Add("kabii", Properties.Resources.ico_kabii);
             myImageList.Images.Add("fuma", Properties.Resources.ico_fuma);
 
@@ -472,7 +474,10 @@ namespace HSDRawViewer
             // Special animation override
             if (SelectedDataNode.Accessor is HSD_AnimJoint
                 || SelectedDataNode.Accessor is HSD_FigaTree
-                || SelectedDataNode.Accessor is HSD_MatAnimJoint)
+                || SelectedDataNode.Accessor is HSD_MatAnimJoint
+                || SelectedDataNode.Accessor is HSD_ShapeAnimJoint
+                || SelectedDataNode.Accessor is HSD_FogDesc
+                || SelectedDataNode.Accessor is HSD_Camera)
             {
                 //foreach (var v in dockPanel.Contents)
                 {
@@ -481,11 +486,20 @@ namespace HSDRawViewer
                         if (SelectedDataNode.Accessor is HSD_MatAnimJoint matjoint)
                             jedit.LoadAnimation(matjoint);
 
+                        if (SelectedDataNode.Accessor is HSD_ShapeAnimJoint shapeJoint)
+                            jedit.LoadAnimation(shapeJoint);
+
                         if (SelectedDataNode.Accessor is HSD_AnimJoint joint)
                             jedit.LoadAnimation(new JointAnimManager(joint));
 
                         if (SelectedDataNode.Accessor is HSD_FigaTree tree)
                             jedit.LoadAnimation(new JointAnimManager(tree));
+
+                        if (SelectedDataNode.Accessor is HSD_FogDesc fog)
+                            jedit.Editor.SetFog(fog);
+
+                        if (SelectedDataNode.Accessor is HSD_Camera camera)
+                            jedit.Editor.SetCamera(camera);
                     }
                 }
             }

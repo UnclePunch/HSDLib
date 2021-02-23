@@ -45,6 +45,9 @@ namespace HSDRaw.Tools
         public byte TrackType;
         public JointTrackType JointTrackType { get => (JointTrackType)TrackType; set => TrackType = (byte)value; }
 
+        public int PtclBank;
+        public int PtclId;
+
         public FOBJ_Player()
         {
             Keys = new List<FOBJKey>();
@@ -53,7 +56,16 @@ namespace HSDRaw.Tools
 
         public FOBJ_Player(HSD_FOBJDesc fobj)
         {
-            Keys = fobj.GetDecodedKeys();
+            if (fobj.JointTrackType == JointTrackType.HSD_A_J_PTCL)
+            {
+                var ptclCode = ((fobj.Buffer[3] & 0xFF) << 16) | ((fobj.Buffer[2] & 0xFF) << 8) | (fobj.Buffer[1] & 0xFF);
+                PtclBank = ptclCode & 0b111111; 
+                PtclId = (ptclCode >> 6) & 0b111111111111111111;
+            }
+            else
+            {
+                Keys = fobj.GetDecodedKeys();
+            }
             TrackType = fobj.TrackType;
         }
 
@@ -76,7 +88,12 @@ namespace HSDRaw.Tools
                 if (Keys == null || Keys.Count == 0)
                     return 0;
 
-                return (int)Keys.Max(e => e.Frame);
+                var max = (int)Keys.Max(e => e.Frame);
+
+                if (max < 1)
+                    max = 1;
+
+                return max;
             }
         }
 
@@ -211,6 +228,87 @@ namespace HSDRaw.Tools
                 return AnimationInterpolationHelper.SplineGetHermite(1 / (state.t1 - state.t0), FrameDiff, state.p0, state.p1, state.d0, state.d1);
 
             return state.p0;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="index"></param>
+        public void AutoTangent(int index)
+        {
+            if (index < 0 || index > Keys.Count - 1)
+                return;
+
+            if (Keys[index].InterpolationType != GXInterpolationType.HSD_A_OP_SPL)
+                return;
+
+            if (index == 0 || index == Keys.Count - 1)
+            {
+                Keys[index].Tan = 0;
+                return;
+            }
+
+            var prev = Keys[index - 1];
+            var current = Keys[index];
+            var next = Keys[index + 1];
+            float weightCount = 0;
+            float tangent = 0;
+            {
+                tangent += (current.Value - prev.Value) / (current.Frame - prev.Frame);
+                weightCount++;
+            }
+            {
+                tangent += (next.Value - current.Value) / (next.Frame - current.Frame);
+                weightCount++;
+            }
+
+            if (weightCount > 0)
+                tangent /= weightCount;
+
+            current.Tan = tangent;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public HSD_FOBJ ToFobj()
+        {
+            HSD_FOBJ fobj = new HSD_FOBJ();
+
+            if (JointTrackType == JointTrackType.HSD_A_J_PTCL)
+            {
+                fobj.JointTrackType = JointTrackType;
+                var ptcl = (PtclId << 6) | (PtclBank & 0b111111);
+                fobj.Buffer = new byte[] { 0, (byte)(ptcl & 0xFF), (byte)((ptcl >> 8) & 0xFF), (byte)((ptcl >> 16) & 0xFF), 0, 0, 0, 0 };
+            }
+            else
+            if (Keys.Count > 0)
+                fobj.SetKeys(Keys, JointTrackType);
+
+            return fobj;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public HSD_FOBJDesc ToFobjDesc()
+        {
+            HSD_FOBJDesc fobj = new HSD_FOBJDesc();
+
+            if (JointTrackType == JointTrackType.HSD_A_J_PTCL)
+            {
+                fobj.JointTrackType = JointTrackType;
+                var ptcl = (PtclId << 6) | (PtclBank & 0b111111);
+                fobj.Buffer = new byte[] { 0, (byte)(ptcl& 0xFF), (byte)((ptcl >> 8) & 0xFF), (byte)((ptcl >> 16) & 0xFF), 0, 0, 0, 0};
+                fobj.DataLength = 8;
+            }
+            else
+            if (Keys.Count > 0)
+                fobj.SetKeys(Keys, TrackType);
+
+            return fobj;
         }
     }
     

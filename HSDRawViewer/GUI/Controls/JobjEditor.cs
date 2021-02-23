@@ -16,6 +16,9 @@ using HSDRawViewer.Tools;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 using HSDRaw.GX;
+using HSDRawViewer.Rendering.Animation;
+using HSDRawViewer.Rendering.Models;
+using HSDRawViewer.Rendering.GX;
 
 namespace HSDRawViewer.GUI.Plugins
 {
@@ -44,6 +47,11 @@ namespace HSDRawViewer.GUI.Plugins
 
             JOBJManager = new JOBJManager();
 
+            showBonesToolStripMenuItem.Checked = JOBJManager._settings.RenderBones;
+            showMeshToolStripMenuItem.Checked = JOBJManager._settings.RenderObjects;
+            showBoneOrientationToolStripMenuItem.Checked = JOBJManager._settings.RenderOrientation;
+            showSelectionOutlineToolStripMenuItem.Checked = JOBJManager._settings.OutlineSelected;
+
             renderModeBox.ComboBox.DataSource = Enum.GetValues(typeof(RenderMode));
             renderModeBox.SelectedIndex = 0;
 
@@ -54,7 +62,7 @@ namespace HSDRawViewer.GUI.Plugins
             treeJOBJ.AfterSelect += (sender, args) =>
             {
                 propertyGrid1.SelectedObject = treeJOBJ.SelectedNode.Tag;
-                JOBJManager.SelectetedJOBJ = treeJOBJ.SelectedNode.Tag as HSD_JOBJ;
+                JOBJManager.SelectedJOBJ = treeJOBJ.SelectedNode.Tag as HSD_JOBJ;
             };
 
             listDOBJ.SelectedIndexChanged += (sender, args) => {
@@ -320,6 +328,24 @@ namespace HSDRawViewer.GUI.Plugins
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="fog"></param>
+        public void SetFog(HSD_FogDesc fog)
+        {
+            JOBJManager._fogParam.LoadFromHSD(fog);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="camera"></param>
+        public void SetCamera(HSD_Camera camera)
+        {
+            // TODO: load camera
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
         /// <param name="animation"></param>
         public void LoadAnimation(JointAnimManager animation)
         {
@@ -346,6 +372,19 @@ namespace HSDRawViewer.GUI.Plugins
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="animation"></param>
+        public void LoadAnimation(HSD_ShapeAnimJoint animation)
+        {
+            JOBJManager.SetShapeAnimJoint(animation);
+            var vp = viewport;
+            vp.AnimationTrackEnabled = true;
+            vp.Frame = 0;
+            vp.MaxFrame = JOBJManager.ShapeAnimation.FrameCount;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
         /// <param name="motFiles"></param>
         public void LoadAnimation(short[] jointTable, MOT_FILE motFile)
         {
@@ -365,7 +404,10 @@ namespace HSDRawViewer.GUI.Plugins
         public void Draw(Camera cam, int windowWidth, int windowHeight)
         {
             JOBJManager.Frame = viewport.Frame;
-            JOBJManager.DOBJManager.OutlineSelected = showSelectionOutlineToolStripMenuItem.Checked;
+            JOBJManager._settings.RenderBones = showBonesToolStripMenuItem.Checked;
+            JOBJManager._settings.RenderOrientation = showBoneOrientationToolStripMenuItem.Checked;
+            JOBJManager._settings.RenderObjects = showMeshToolStripMenuItem.Checked;
+            JOBJManager._settings.OutlineSelected = showSelectionOutlineToolStripMenuItem.Checked;
             JOBJManager.Render(cam);
 
             foreach (var d in _drawables)
@@ -569,17 +611,17 @@ namespace HSDRawViewer.GUI.Plugins
         {
             if(toolStripComboBox2.SelectedIndex == 0)
             {
-                JOBJManager.settings.RenderObjects = true;
+                JOBJManager._settings.RenderObjects = true;
                 JOBJManager.DOBJManager.OnlyRenderSelected = false;
             }
             if (toolStripComboBox2.SelectedIndex == 1)
             {
-                JOBJManager.settings.RenderObjects = true;
+                JOBJManager._settings.RenderObjects = true;
                 JOBJManager.DOBJManager.OnlyRenderSelected = true;
             }
             if (toolStripComboBox2.SelectedIndex == 2)
             {
-                JOBJManager.settings.RenderObjects = false;
+                JOBJManager._settings.RenderObjects = false;
                 JOBJManager.DOBJManager.OnlyRenderSelected = false;
             }
         }
@@ -1255,7 +1297,7 @@ namespace HSDRawViewer.GUI.Plugins
                             if (old.InverseWorldTransform != null)
                             {
                                 if(n.InverseWorldTransform == null)
-                                    old.InverseWorldTransform = JOBJManager.TKMatixToHSDMatrix(temp.GetWorldTransform(n).Inverted());
+                                    old.InverseWorldTransform = temp.GetWorldTransform(n).Inverted().ToHsdMatrix();
                                 else
                                     old.InverseWorldTransform = n.InverseWorldTransform;
                             }
@@ -1325,7 +1367,7 @@ namespace HSDRawViewer.GUI.Plugins
         {
             if(MessageBox.Show("Reorient Bones", "This makes changes to bones and cannot be undone", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning) == DialogResult.OK)
             {
-                JOBJTools.ApplyMeleeFighterTransforms(root);
+                JOBJExtensions.ApplyMeleeFighterTransforms(root);
                 JOBJManager.RecalculateInverseBinds();
             }
         }
@@ -1350,7 +1392,7 @@ namespace HSDRawViewer.GUI.Plugins
         /// <param name="e"></param>
         private void autoUpdateFlagsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            JOBJTools.UpdateJOBJFlags(root);
+            JOBJExtensions.UpdateJOBJFlags(root);
         }
 
         /// <summary>
@@ -1378,17 +1420,6 @@ namespace HSDRawViewer.GUI.Plugins
                     }
                 }
             }*/
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void displaySettingsToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            using (PropertyDialog d = new PropertyDialog("Display Settings", JOBJManager.settings))
-                d.ShowDialog();
         }
 
         /// <summary>
@@ -1457,7 +1488,7 @@ namespace HSDRawViewer.GUI.Plugins
         /// <param name="e"></param>
         private void importTexturesToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            JOBJTools.ImportTextures(root);
+            JOBJExtensions.ImportTextures(root);
         }
 
         /// <summary>
@@ -1467,7 +1498,7 @@ namespace HSDRawViewer.GUI.Plugins
         /// <param name="e"></param>
         private void tsExportTextures_Click(object sender, EventArgs e)
         {
-            JOBJTools.ExportTextures(root);
+            JOBJExtensions.ExportTextures(root);
         }
 
         /// <summary>
@@ -1485,7 +1516,9 @@ namespace HSDRawViewer.GUI.Plugins
 
             public Camera Camera { get; set; }
 
-            public JOBJManagerSettings Settings { get; set; }
+            public JobjDisplaySettings Settings { get; set; }
+
+            public GXLightParam Lighting { get; set; }
 
             public JointAnimManager Animation { get; set; }
 
@@ -1540,7 +1573,8 @@ namespace HSDRawViewer.GUI.Plugins
                     ShowGrid = viewport.EnableFloor,
                     ShowBackdrop = viewport.EnableBack,
                     Camera = viewport.Camera,
-                    Settings = JOBJManager.settings,
+                    Lighting = JOBJManager._lightParam,
+                    Settings = JOBJManager._settings,
                     Animation = JOBJManager.Animation,
                     HiddenNodes = JOBJManager.GetHiddenDOBJIndices().ToArray()
                 };
@@ -1581,7 +1615,10 @@ namespace HSDRawViewer.GUI.Plugins
                 viewport.Camera = settings.Camera;
 
             if (settings.Settings != null)
-                JOBJManager.settings = settings.Settings;
+                JOBJManager._settings = settings.Settings;
+
+            if (settings.Lighting != null)
+                JOBJManager._lightParam = settings.Lighting;
 
             if (settings.Animation != null)
             {
@@ -1698,6 +1735,28 @@ namespace HSDRawViewer.GUI.Plugins
         private void listDOBJ_KeyPress(object sender, KeyPressEventArgs e)
         {
             DeleteSelectedDOBJs();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void displaySettingsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using (PropertyDialog d = new PropertyDialog("Light Settings", JOBJManager._lightParam))
+                d.ShowDialog();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void fogSettingsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using (PropertyDialog d = new PropertyDialog("Fog Settings", JOBJManager._fogParam))
+                d.ShowDialog();
         }
     }
 }
