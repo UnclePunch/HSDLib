@@ -69,5 +69,8 @@ namespace HSDRaw.Melee
         public HSD_Camera menu_cam { get => _s.GetReference<HSD_Camera>(0x04); set => _s.SetReference(0x04, value); }
         public HSD_JOBJDesc bg { get => _s.GetReference<HSD_JOBJDesc>(0x8); set => _s.SetReference(0x8, value); }
         public HSD_FogDesc fog { get => _s.GetReference<HSD_FogDesc>(0xC); set => _s.SetReference(0xC, value); }
+        public HSD_JOBJDesc cursor { get => _s.GetReference<HSD_JOBJDesc>(0x10); set => _s.SetReference(0x10, value); }
+        public HSD_Camera movie_cam { get => _s.GetReference<HSD_Camera>(0x14); set => _s.SetReference(0x14, value); }
+
     }
 }
