@@ -821,6 +821,7 @@ namespace HSDRaw
                 x => x.Equals("lclData") ?  new SBM_TM_LCancelData() : null,
                 x => x.Equals("ldshData") ?  new SBM_TM_LedgedashData() : null,
                 x => x.Equals("wdshData") ?  new SBM_TM_WavedashhData() : null,
+                x => x.Equals("mclData") ?  new SBM_TM_MeteorCancelData() : null,
                 x => x.Equals("MnEvSlData") ?  new SBM_TM_MenuEventSelectData() : null,
                 x => x.Equals("mexCostume") ?  new MEX_CostumeSymbol() : null,
                 x => x.StartsWith("mnName") ?  new HSDFixedLengthPointerArrayAccessor<HSD_ShiftJIS_String>() : null,

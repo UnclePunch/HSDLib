@@ -5,7 +5,8 @@
     /// </summary>
     public class HSD_Camera : HSDAccessor
     {
-        public override int TrimmedSize => 0x3C;
+
+        public override int TrimmedSize => 0x40;
 
         public string ClassName { get => _s.GetString(0x00); set => _s.SetString(0x00, value); }
         public short Flags { get => _s.GetInt16(0x04); set => _s.SetInt16(0x04, value); }
@@ -22,8 +23,15 @@
         public int Unknown3 { get => _s.GetInt32(0x24); set => _s.SetInt32(0x24, value); }
         public float NearClip { get => _s.GetFloat(0x28); set => _s.SetFloat(0x28, value); }
         public float FarClip { get => _s.GetFloat(0x2C); set => _s.SetFloat(0x2C, value); }
-        public HSD_Camera SelfReference { get => _s.GetReference<HSD_Camera>(0x30); set => _s.SetReference(0x30, value); }
-        public float FieldOfView { get => _s.GetFloat(0x34); set => _s.SetFloat(0x34, value); }
+        public float FieldOfView { get => _s.GetFloat(0x30); set => _s.SetFloat(0x30, value); }
+        public float Aspect { get => _s.GetFloat(0x34); set => _s.SetFloat(0x34, value); }
+        public float FrustrumTop { get => _s.GetFloat(0x30); set => _s.SetFloat(0x30, value); }
+        public float FrustrumBottom { get => _s.GetFloat(0x34); set => _s.SetFloat(0x34, value); }
+        public float FrustrumLeft { get => _s.GetFloat(0x38); set => _s.SetFloat(0x38, value); }
+        public float FrustrumRight { get => _s.GetFloat(0x3C); set => _s.SetFloat(0x3C, value); }
+        public float OrthoTop { get => _s.GetFloat(0x30); set => _s.SetFloat(0x30, value); }
+        public float OrthoBottom { get => _s.GetFloat(0x34); set => _s.SetFloat(0x34, value); }
+        public float OrthoLeft { get => _s.GetFloat(0x38); set => _s.SetFloat(0x38, value); }
+        public float OrthoRight { get => _s.GetFloat(0x3C); set => _s.SetFloat(0x3C, value); }
     }
-    
 }
