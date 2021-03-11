@@ -80,47 +80,45 @@ namespace HSDRawViewer.Rendering
             return GL.GetUniformBlockIndex(programId, name);
         }
 
+        private bool CheckValidUniform(string uniform)
+        {
+            if (GetVertexAttributeUniformLocation(uniform) == -1)
+            {
+                invalidUniformNames.Add(uniform);
+                return false;
+            }
+            return true;
+        }
+
         // Shader Uniforms. Keep track of undeclared variables, so they can be fixed later.
         public void SetFloat(string uniformName, float value)
         {
-            if (!vertexAttributeAndUniformLocations.ContainsKey(uniformName) && !invalidUniformNames.Contains(uniformName))
-            {
-                invalidUniformNames.Add(uniformName);
+            if (!CheckValidUniform(uniformName))
                 return;
-            }
 
             GL.Uniform1(GetVertexAttributeUniformLocation(uniformName), value);
         }
 
         public void SetInt(string uniformName, int value)
         {
-            if (!vertexAttributeAndUniformLocations.ContainsKey(uniformName) && !invalidUniformNames.Contains(uniformName))
-            {
-                invalidUniformNames.Add(uniformName);
+            if (!CheckValidUniform(uniformName))
                 return;
-            }
 
             GL.Uniform1(GetVertexAttributeUniformLocation(uniformName), value);
         }
 
         public void SetUint(string uniformName, uint value)
         {
-            if (!vertexAttributeAndUniformLocations.ContainsKey(uniformName) && !invalidUniformNames.Contains(uniformName))
-            {
-                invalidUniformNames.Add(uniformName);
+            if (!CheckValidUniform(uniformName))
                 return;
-            }
 
             GL.Uniform1(GetVertexAttributeUniformLocation(uniformName), value);
         }
 
         public void SetBoolToInt(string uniformName, bool value)
         {
-            if (!vertexAttributeAndUniformLocations.ContainsKey(uniformName) && !invalidUniformNames.Contains(uniformName))
-            {
-                invalidUniformNames.Add(uniformName);
+            if (!CheckValidUniform(uniformName))
                 return;
-            }
 
             // if/else is faster than the ternary operator. 
             if (value)
@@ -131,55 +129,40 @@ namespace HSDRawViewer.Rendering
 
         public void SetVector2(string uniformName, float X, float Y)
         {
-            if (!vertexAttributeAndUniformLocations.ContainsKey(uniformName) && !invalidUniformNames.Contains(uniformName))
-            {
-                invalidUniformNames.Add(uniformName);
+            if (!CheckValidUniform(uniformName))
                 return;
-            }
 
             GL.Uniform2(GetVertexAttributeUniformLocation(uniformName), X, Y);
         }
 
         public void SetVector3(string uniformName, Vector3 value)
         {
-            if (!vertexAttributeAndUniformLocations.ContainsKey(uniformName) && !invalidUniformNames.Contains(uniformName))
-            {
-                invalidUniformNames.Add(uniformName);
+            if (!CheckValidUniform(uniformName))
                 return;
-            }
 
             GL.Uniform3(GetVertexAttributeUniformLocation(uniformName), value);
         }
 
         public void SetVector3(string uniformName, float x, float y, float z)
         {
-            if (!vertexAttributeAndUniformLocations.ContainsKey(uniformName) && !invalidUniformNames.Contains(uniformName))
-            {
-                invalidUniformNames.Add(uniformName);
+            if (!CheckValidUniform(uniformName))
                 return;
-            }
 
             GL.Uniform3(GetVertexAttributeUniformLocation(uniformName), x, y, z);
         }
 
         public void SetVector4(string uniformName, Vector4 value)
         {
-            if (!vertexAttributeAndUniformLocations.ContainsKey(uniformName) && !invalidUniformNames.Contains(uniformName))
-            {
-                invalidUniformNames.Add(uniformName);
+            if (!CheckValidUniform(uniformName))
                 return;
-            }
 
             GL.Uniform4(GetVertexAttributeUniformLocation(uniformName), value);
         }
 
         public void SetVector4(string uniformName, float x, float y, float z, float w)
         {
-            if (!vertexAttributeAndUniformLocations.ContainsKey(uniformName) && !invalidUniformNames.Contains(uniformName))
-            {
-                invalidUniformNames.Add(uniformName);
+            if (!CheckValidUniform(uniformName))
                 return;
-            }
 
             GL.Uniform4(GetVertexAttributeUniformLocation(uniformName), x, y, z, w);
         }
@@ -187,33 +170,24 @@ namespace HSDRawViewer.Rendering
 
         public void SetColor(string uniformName, Color col, byte alpha)
         {
-            if (!vertexAttributeAndUniformLocations.ContainsKey(uniformName) && !invalidUniformNames.Contains(uniformName))
-            {
-                invalidUniformNames.Add(uniformName);
+            if (!CheckValidUniform(uniformName))
                 return;
-            }
 
             GL.Uniform4(GetVertexAttributeUniformLocation(uniformName), col.R / 255f, col.G / 255f, col.B / 255f, alpha / 255f);
         }
 
         public void SetMatrix4x4(string uniformName, ref Matrix4 value)
         {
-            if (!vertexAttributeAndUniformLocations.ContainsKey(uniformName) && !invalidUniformNames.Contains(uniformName))
-            {
-                invalidUniformNames.Add(uniformName);
+            if (!CheckValidUniform(uniformName))
                 return;
-            }
 
             GL.UniformMatrix4(GetVertexAttributeUniformLocation(uniformName), false, ref value);
         }
 
         public void SetMatrix4x4(string uniformName, Matrix4[] value)
         {
-            if (!vertexAttributeAndUniformLocations.ContainsKey(uniformName) && !invalidUniformNames.Contains(uniformName))
-            {
-                invalidUniformNames.Add(uniformName);
+            if (!CheckValidUniform(uniformName))
                 return;
-            }
 
             GL.UniformMatrix4(GetVertexAttributeUniformLocation(uniformName), value.Length, false, ref value[0].Row0.X);
         }
@@ -226,7 +200,18 @@ namespace HSDRawViewer.Rendering
                 return value;
             }
             else
-                return -1;
+            {
+                value = GL.GetAttribLocation(programId, name);
+                if (value != -1)
+                    return value;
+
+                value = GL.GetUniformLocation(programId, name);
+
+                if (value != -1)
+                    return value;
+            }
+
+            return -1;
         }
 
         public void EnableVertexAttributes()
@@ -325,8 +310,12 @@ namespace HSDRawViewer.Rendering
 
         public void LoadShader(string filePath)
         {
-            // Compile and attach before linking.
             LoadShaderBasedOnType(filePath);
+        }
+
+        // Compile and attach before linking.
+        public void Link()
+        {
             GL.LinkProgram(programId);
 
             LoadAttributes();
@@ -356,22 +345,17 @@ namespace HSDRawViewer.Rendering
 
         private void AttachAndCompileShader(string shaderFile, ShaderType type, int program, out int id)
         {
-            string shaderText = File.ReadAllText(shaderFile);
             id = GL.CreateShader(type);
 
-            GL.ShaderSource(id, shaderText);
+            GL.ShaderSource(id, File.ReadAllText(shaderFile));
             GL.CompileShader(id);
             GL.AttachShader(program, id);
-
-            // Get the name of the shader. 
-            string[] parts = shaderFile.Split('\\');
-            string shaderName = parts[parts.Length - 1];
             
             var error = GL.GetShaderInfoLog(id);
             if(!string.IsNullOrEmpty(error))
             {
                 MessageBox.Show("Shader Compile Error: " + error);
-                File.WriteAllText(shaderName + "_error.txt", error);
+                File.WriteAllText(type + "_error.txt", error);
             }
             //errorLog.AppendShaderInfoLog(shaderName, id, type);
         }
