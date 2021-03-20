@@ -78,6 +78,7 @@ namespace HSDRaw.Melee
     {
         public HSD_JOBJDesc arrows { get => _s.GetReference<HSD_JOBJDesc>(0x00); set => _s.SetReference(0x00, value); }
         public SBM_ItemSubactionData subaction { get => _s.GetReference<SBM_ItemSubactionData>(0x04); set => _s.SetReference(0x04, value); }
+        public HSD_JOBJDesc timing { get => _s.GetReference<HSD_JOBJDesc>(0x08); set => _s.SetReference(0x08, value); }
 
     }
 }
