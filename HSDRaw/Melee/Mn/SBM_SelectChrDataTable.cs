@@ -72,6 +72,8 @@ namespace HSDRaw.Melee.Mn
 
         public HSD_MatAnimJoint PortraitMaterialAnimation { get => _s.GetReference<HSD_MatAnimJoint>(0x98); set => _s.SetReference(0x98, value); }
 
+        public HSD_AnimJoint SlippiChatSelect { get => _s.GetReference<HSD_AnimJoint>(0x100); set => _s.SetReference(0x100, value); }
 
+        public HSD_AnimJoint SlippiChatMessage { get => _s.GetReference<HSD_AnimJoint>(0x104); set => _s.SetReference(0x104, value); }
     }
 }

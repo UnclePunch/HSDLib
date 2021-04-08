@@ -824,6 +824,7 @@ namespace HSDRaw
                 x => x.Equals("mclData") ?  new SBM_TM_MeteorCancelData() : null,
                 x => x.Equals("MnEvSlData") ?  new SBM_TM_MenuEventSelectData() : null,
                 x => x.Equals("mexCostume") ?  new MEX_CostumeSymbol() : null,
+                x => x.Equals("slpChat") ?  new SBM_Slp_Chat() : null,
                 x => x.StartsWith("mnName") ?  new HSDFixedLengthPointerArrayAccessor<HSD_ShiftJIS_String>() : null,
                 x => x.EndsWith("move_logic") ?  new HSDArrayAccessor<MEX_MoveLogic>() : null,
                 x => new HSDAccessor(),
