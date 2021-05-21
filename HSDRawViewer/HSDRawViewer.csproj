@@ -117,7 +117,7 @@
     <Compile Include="ContextMenus\JOBJDescContextMenu.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="ContextMenus\MapHeadContextMenu.cs">
+    <Compile Include="ContextMenus\Melee\MapHeadContextMenu.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="ContextMenus\MatAnimContextMenu.cs">
@@ -144,17 +144,22 @@
     <Compile Include="ContextMenus\Melee\SelectCharContextMenu.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="ContextMenus\SplineContextMenu.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="ContextMenus\SubactionTableContextMenu.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="ContextMenus\UnidentifiedContextMenu.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="Converters\AirRide\BucketGen.cs" />
+    <Compile Include="Converters\AirRide\KCLConv.cs" />
     <Compile Include="Converters\Animation\CHR0Converter.cs" />
     <Compile Include="Converters\Animation\ConvFOBJ.cs" />
     <Compile Include="Converters\Animation\HSDK.cs" />
     <Compile Include="Converters\SBM\ConvSVG.cs" />
-    <Compile Include="Converters\JOBJExtensions.cs" />
+    <Compile Include="Extensions\JOBJExtensions.cs" />
     <Compile Include="Converters\Animation\MayaAnim.cs" />
     <Compile Include="Converters\ModelExporter.cs" />
     <Compile Include="Converters\ModelImporter.cs" />
@@ -167,6 +172,7 @@
     <Compile Include="Converters\SBM\SSFConverter.cs" />
     <Compile Include="Converters\TOBJConverter.cs" />
     <Compile Include="DataNode.cs" />
+    <Compile Include="Extensions\KarCollisionExtensions.cs" />
     <Compile Include="GUI\Controls\DoubleBufferedListBox.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -333,7 +339,6 @@
     <Compile Include="GUI\Controls\KeyEditor.Designer.cs">
       <DependentUpon>KeyEditor.cs</DependentUpon>
     </Compile>
-    <Compile Include="GUI\Plugins\AirRide\AirRideGrCollisionManager.cs" />
     <Compile Include="GUI\Plugins\AirRide\AirRideGrDataEditor.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -451,6 +456,7 @@
     <Compile Include="Rendering\Models\MobjManager.cs" />
     <Compile Include="Rendering\Models\VertexBufferManager.cs" />
     <Compile Include="Rendering\GX\RenderMode.cs" />
+    <Compile Include="Rendering\Renderers\AfterImageRenderer.cs" />
     <Compile Include="Rendering\Renderers\GraphRenderer.cs" />
     <Compile Include="Rendering\Renderers\HurtboxRenderer.cs" />
     <Compile Include="Rendering\Renderers\TextRenderer.cs" />
@@ -702,9 +708,7 @@
     <None Include="Shader\gx_material.frag">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Shader\gx_tev.frag">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <None Include="Shader\gx_tev_old.frag" />
     <None Include="Shader\gx_uv.frag">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

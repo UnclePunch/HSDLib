@@ -33,12 +33,18 @@ namespace HSDRawViewer.Rendering.GX
                 _shader = new Shader();
                 _shader.LoadShader(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Shader\gx.vert"));
                 _shader.LoadShader(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Shader\gx_uv.frag"));
-                _shader.LoadShader(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Shader\gx_tev.frag"));
                 _shader.LoadShader(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Shader\gx_lightmap.frag"));
                 _shader.LoadShader(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Shader\gx_material.frag"));
                 _shader.LoadShader(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Shader\gx_alpha_test.frag"));
                 _shader.LoadShader(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Shader\gx.frag"));
+                _shader.Link();
+
+                if (!_shader.ProgramCreatedSuccessfully())
+                    System.Windows.Forms.MessageBox.Show("Shader failed to link or compile");
             }
+
+            if (!_shader.ProgramCreatedSuccessfully())
+                return;
 
             // bind shader
             GL.UseProgram(_shader.programId);
