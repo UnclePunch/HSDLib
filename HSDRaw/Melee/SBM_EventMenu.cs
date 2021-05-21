@@ -20,6 +20,7 @@ namespace HSDRaw.Melee
         public HSD_JOBJ tip_joint { get => _s.GetReference<HSD_JOBJ>(0x20); set => _s.SetReference(0x20, value); }
         public HSDNullPointerArrayAccessor<HSD_AnimJoint> tip_jointanim { get => _s.GetReference<HSDNullPointerArrayAccessor<HSD_AnimJoint>>(0x24); set => _s.SetReference(0x24, value); }
         public HSD_JOBJDesc Dialogue { get => _s.GetReference<HSD_JOBJDesc>(0x28); set => _s.SetReference(0x28, value); }
+        public HSD_JOBJDesc Scenario { get => _s.GetReference<HSD_JOBJDesc>(0x2C); set => _s.SetReference(0x2C, value); }
 
 
     }
@@ -73,6 +74,7 @@ namespace HSDRaw.Melee
         public HSD_FogDesc fog { get => _s.GetReference<HSD_FogDesc>(0xC); set => _s.SetReference(0xC, value); }
         public HSD_JOBJDesc cursor { get => _s.GetReference<HSD_JOBJDesc>(0x10); set => _s.SetReference(0x10, value); }
         public HSD_Camera movie_cam { get => _s.GetReference<HSD_Camera>(0x14); set => _s.SetReference(0x14, value); }
+        public HSDNullPointerArrayAccessor<HSD_LOBJ> light { get => _s.GetReference<HSDNullPointerArrayAccessor<HSD_LOBJ>>(0x18); set => _s.SetReference(0x18, value); }
 
     }
     public class SBM_TM_MeteorCancelData : HSDAccessor
