@@ -271,7 +271,10 @@
   name: Enable Jab Followup
 
 - code: 30
-  name: Toggle Jab Follow Up
+  name: Set Rapid Jab Flag
+  parameters:
+  - name: Value
+    bitCount: 26
 
 - code: 31
   name: Change Model State
@@ -478,8 +481,10 @@
 - code: 47
   name: Remove Color Animation
   parameters:
-  - name: Unknown
-    bitCount: 26
+  - name: ID
+    bitCount: 8
+  - name: Padding
+    bitCount: 18
 
 - code: 48
   name: Unknown0xC0
