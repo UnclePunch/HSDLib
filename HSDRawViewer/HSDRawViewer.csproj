@@ -117,7 +117,7 @@
     <Compile Include="ContextMenus\JOBJDescContextMenu.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="ContextMenus\MapHeadContextMenu.cs">
+    <Compile Include="ContextMenus\Melee\MapHeadContextMenu.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="ContextMenus\MatAnimContextMenu.cs">
@@ -158,8 +158,9 @@
     <Compile Include="Converters\Animation\CHR0Converter.cs" />
     <Compile Include="Converters\Animation\ConvFOBJ.cs" />
     <Compile Include="Converters\Animation\HSDK.cs" />
+    <Compile Include="Converters\Animation\JointAnimationLoader.cs" />
     <Compile Include="Converters\SBM\ConvSVG.cs" />
-    <Compile Include="Converters\JOBJExtensions.cs" />
+    <Compile Include="Extensions\JOBJExtensions.cs" />
     <Compile Include="Converters\Animation\MayaAnim.cs" />
     <Compile Include="Converters\ModelExporter.cs" />
     <Compile Include="Converters\ModelImporter.cs" />
@@ -172,6 +173,7 @@
     <Compile Include="Converters\SBM\SSFConverter.cs" />
     <Compile Include="Converters\TOBJConverter.cs" />
     <Compile Include="DataNode.cs" />
+    <Compile Include="Extensions\KarCollisionExtensions.cs" />
     <Compile Include="GUI\Controls\DoubleBufferedListBox.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -455,6 +457,7 @@
     <Compile Include="Rendering\Models\MobjManager.cs" />
     <Compile Include="Rendering\Models\VertexBufferManager.cs" />
     <Compile Include="Rendering\GX\RenderMode.cs" />
+    <Compile Include="Rendering\Renderers\AfterImageRenderer.cs" />
     <Compile Include="Rendering\Renderers\GraphRenderer.cs" />
     <Compile Include="Rendering\Renderers\HurtboxRenderer.cs" />
     <Compile Include="Rendering\Renderers\TextRenderer.cs" />
@@ -480,7 +483,6 @@
     <Compile Include="TestFunctions.cs" />
     <Compile Include="Sound\DSP.cs" />
     <Compile Include="Sound\DSPPlayer.cs" />
-    <Compile Include="Tools\AnimationCompressor.cs" />
     <Compile Include="Tools\AnimationRetarget.cs" />
     <Compile Include="Tools\FileIO.cs" />
     <Compile Include="Tools\FlagEnumEditor.cs">

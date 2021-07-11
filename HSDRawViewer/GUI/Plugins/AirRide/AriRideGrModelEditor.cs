@@ -17,6 +17,7 @@ using WeifenLuo.WinFormsUI.Docking;
 
 namespace HSDRawViewer.GUI.Plugins.AirRide
 {
+    [SupportedTypes(new Type[] { typeof(KAR_grMainModel) })]
     public partial class AriRideGrModelEditor : DockContent, EditorBase, IDrawable
     {
         private JobjEditor _jointEditor;
@@ -36,8 +37,6 @@ namespace HSDRawViewer.GUI.Plugins.AirRide
         }
 
         public DockState DefaultDockState => DockState.Document;
-
-        public Type[] SupportedTypes => new Type[] { typeof(KAR_grMainModel) };
 
         public DataNode Node { get => _node; set
             {
@@ -301,6 +300,14 @@ namespace HSDRawViewer.GUI.Plugins.AirRide
                 Data = Converters.AirRide.BucketGen.GenerateBucketPartition(collision)
             });
             f2.Save(Tools.FileIO.SaveFile(ApplicationSettings.HSDFileFilter, "partition.dat"));
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public void OnFileSave()
+        {
+
         }
     }
 }
